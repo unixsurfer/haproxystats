@@ -68,7 +68,7 @@ class Consumer(multiprocessing.Process):
                 graphite_tree.append(socket.gethostname())
             else:
                 graphite_tree.append(socket.gethostname().split('.')[0])
-
+        graphite_tree.append('haproxy')
         self.graphite_path = '.'.join([x.replace('.', '_')
                                        for x in graphite_tree])
 
