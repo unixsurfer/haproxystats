@@ -41,6 +41,6 @@ DEFAULT_OPTIONS = {
         'fqdn': 'true',
     },
     'local-stire': {
-        'dir': '/var/lib/haproxy-stats/local-store',
+        'dir': '/var/lib/haproxystats/local-store',
     }
 }
