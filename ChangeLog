@@ -1,4 +1,10 @@
 CHANGES
 =======
 
+0.0.1
+-----
+
+* RELEASE 0.0.1 version
+* Change suffix for README in setup.cfg
+* The 1st functional version of the program:-
 * Initial commit
