@@ -40,7 +40,7 @@ DEFAULT_OPTIONS = {
         'prefix_hostname': 'true',
         'fqdn': 'true',
     },
-    'local-stire': {
+    'local-store': {
         'dir': '/var/lib/haproxystats/local-store',
     }
 }
