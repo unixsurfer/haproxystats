@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.0.3
+-----
+
+* RELEASE 0.0.3 version
+* Don't include 'haproxy' in graphite path
+* Fix typo in the section name
+
 0.0.2
 -----
 
