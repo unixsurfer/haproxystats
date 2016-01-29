@@ -157,7 +157,7 @@ class Consumer(multiprocessing.Process):
         # Pandas did all the hard work, let's join above tables and extract
         # the statistics
         for values in pandas.concat([sums, avgs], axis=0).items():
-            data = "{path}.haproxy.daemon.{metric} {value} {time}\n".format(
+            data = "{path}.daemon.{metric} {value} {time}\n".format(
                 path=self.graphite_path, metric=values[0].replace('.', '_'),
                 value=values[1], time=self.epoch)
             dispatcher.signal('send', data=data)
