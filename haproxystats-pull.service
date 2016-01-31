@@ -1,0 +1,19 @@
+[Unit]
+Description=Pulls statistics from HAProxy daemon over UNIX sockets
+After=network.service syslog.target
+Before=haproxystats-process.service
+Wants=network.service syslog.target
+Documentation=https://github.com/unixsurfer/haproxystats
+
+[Service]
+Type=simple
+Environment="CONFIG=/etc/haproxystats.conf"
+User=haproxystats
+Group=haproxystats
+ExecStart=/opt/blue-python/3.4/bin/haproxystats-pull -f $CONFIG
+TimeoutStartSec=3
+TimeoutStopSec=6
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
