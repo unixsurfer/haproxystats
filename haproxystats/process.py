@@ -325,7 +325,7 @@ def main():
     handler = EventHandler(tasks=tasks)
     notifier = pyinotify.Notifier(watcher, handler)
     num_consumers = config.getint('process', 'workers')
-    incoming_dir = config.get('pull', 'dst-dir')
+    incoming_dir = config.get('process', 'src-dir')
 
     log.setLevel(getattr(logging, config.get('process', 'loglevel').upper(),
                          None))

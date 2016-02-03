@@ -32,6 +32,7 @@ DEFAULT_OPTIONS = {
     },
     'process': {
         'workers': '4',
+        'src-dir': '/var/lib/haproxystats/incoming',
     },
     'graphite': {
         'server': '127.0.0.1',
