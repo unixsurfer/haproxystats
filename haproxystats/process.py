@@ -20,6 +20,7 @@ import logging
 import glob
 import copy
 import sys
+import time
 import shutil
 import socket
 import fileinput
@@ -362,7 +363,16 @@ def main():
     signal.signal(signal.SIGTERM, shutdown)
 
     # Add our watcher.
-    watcher.add_watch(incoming_dir, MASK, rec=False)
+    while True:
+        try:
+            log.info('adding a watch for %s', incoming_dir)
+            watcher.add_watch(incoming_dir, MASK, quiet=False, rec=False)
+        except pyinotify.WatchManagerError as error:
+            log.error('received error (%s), going to retry in few seconds',
+                      error)
+            time.sleep(3)
+        else:
+            break
 
     log.info('creating %d consumers', num_consumers)
     consumers = [Consumer(tasks, config) for i in range(num_consumers)]
