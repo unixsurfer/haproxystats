@@ -24,6 +24,7 @@ import time
 import signal
 import shutil
 import logging
+from functools import partial
 from configparser import ConfigParser, ExtendedInterpolation
 import copy
 import glob
@@ -41,12 +42,22 @@ log = logging.getLogger('root')  # pylint: disable=I0011,C0103
 CMDS = ['show info', 'show stat']
 
 
-def shutdown():
+def shutdown(signal, loop, executor):
     """Performs a clean shutdown"""
-    log.info('received stop signal, cancelling tasks...')
+    tasks_running = False
+    log.info('received %s', signal)
+
     for task in asyncio.Task.all_tasks():
-        task.cancel()
-    log.info('bye, exiting...')
+        if not task.done():
+            tasks_running = True
+            log.info('cancelling %s task', task)
+            task.cancel()
+
+    if not tasks_running:
+        log.info('no tasks were running when %s signal received', signal)
+        log.info('waiting for threads to finish any pending IO tasks')
+        executor.shutdown(wait=True)
+        sys.exit(0)
 
 
 def write_file(filename, data):
@@ -158,7 +169,7 @@ def pull_stats(config, storage_dir, loop, executor):
     return len(set(status)) == 1 and True in set(status)
 
 
-def supervisor(loop, config):
+def supervisor(loop, config, executor):
     """Coordinates the pulling of HAProxy statistics from UNIX sockets.
 
     This is the client routine which launches requests to all HAProxy
@@ -168,13 +179,14 @@ def supervisor(loop, config):
     Arguments:
         loop (obj): A base event loop from asyncio module.
         config (obj): A configParser object which holds configuration.
+        executor(obj): A ThreadPoolExecutor object.
     """
     dst_dir = config.get('pull', 'dst-dir')
     tmp_dst_dir = config.get('pull', 'tmp-dst-dir')
-    executor = ThreadPoolExecutor(max_workers=config.getint('pull', 'workers'))
     exit_code = 1
 
     while True:
+        log.debug('entering while loop')
         start_time = int(time.time())
         # HAProxy statistics are stored in a directory and we use retrieval
         # time(seconds since the Epoch) as a name of the directory.
@@ -194,9 +206,10 @@ def supervisor(loop, config):
             break
 
         try:
-            # Launch the delegating coroutine
+            log.debug('launching delegating coroutine')
             result = loop.run_until_complete(pull_stats(config, storage_dir,
                                                         loop, executor))
+            log.debug('delegating coroutine finished')
         except asyncio.CancelledError:
             log.info('Received CancelledError exception')
             exit_code = 0
@@ -235,8 +248,11 @@ def supervisor(loop, config):
     # they perform disk IO operations which can take some time in certain
     # situations, thus we want to wait for them in order to perform a clean
     # shutdown.
+    log.info('waiting for threads to finish any pending IO tasks')
     executor.shutdown(wait=True)
+    log.info('closing asyncio event loop')
     loop.close()
+    log.info('exiting with status %s', exit_code)
     sys.exit(exit_code)
 
 
@@ -270,10 +286,12 @@ def main():
                          None))
     # Setup our event loop
     loop = asyncio.get_event_loop()
-
+    executor = ThreadPoolExecutor(max_workers=config.getint('pull', 'workers'))
     # Register shutdown to signals
-    loop.add_signal_handler(signal.SIGHUP, shutdown)
-    loop.add_signal_handler(signal.SIGTERM, shutdown)
+    loop.add_signal_handler(signal.SIGHUP, partial(shutdown, 'SIGHUP', loop,
+                                                   executor))
+    loop.add_signal_handler(signal.SIGTERM, partial(shutdown, 'SIGTERM', loop,
+                                                    executor))
 
     # a temporary directory to store fetched data
     tmp_dst_dir = config['pull']['tmp-dst-dir']
@@ -288,7 +306,7 @@ def main():
             if exc.errno != 17:
                 sys.exit("failed to make directory {d}:{e}".format(d=directory,
                                                                    e=exc))
-    supervisor(loop, config)
+    supervisor(loop, config, executor)
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
