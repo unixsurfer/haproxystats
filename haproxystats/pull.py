@@ -138,8 +138,15 @@ def pull_stats(config, storage_dir, loop, executor):
     # absolute directory path which contains UNIX socket files.
     socket_dir = config.get('pull', 'socket-dir')
     timeout = config.getint('pull', 'timeout')
-    socket_files = [f for f in glob.glob(socket_dir + '/*')
-                    if is_unix_socket(f)]
+
+    while True:
+        socket_files = [f for f in glob.glob(socket_dir + '/*')
+                        if is_unix_socket(f)]
+        if not socket_files:
+            log.info('found zero socket to connect to, going to sleep for 8s')
+            yield from asyncio.sleep(8)
+        else:
+            break
 
     log.debug('pull statistics')
     coroutines = [get(socket_file, cmd, storage_dir, loop, executor, timeout)
