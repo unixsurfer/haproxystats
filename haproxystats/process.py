@@ -136,7 +136,7 @@ class Consumer(multiprocessing.Process):
             files (list): A list of file which contain raw data from HAProxy
         """
         log.debug('processing files %s', ','.join(files))
-
+        log.debug('processing statistics for HAProxy daemon')
         raw_info_stats = defaultdict(list)
         # Parse raw data and build a data structure
         with fileinput.input(files=files) as file_input:
@@ -162,6 +162,7 @@ class Consumer(multiprocessing.Process):
                 path=self.graphite_path, metric=values[0].replace('.', '_'),
                 value=values[1], time=self.epoch)
             dispatcher.signal('send', data=data)
+        log.debug('finished processing statistics for HAProxy daemon')
 
     def sites_stats(self, files):
         """Process statistics for frontends/backends/servers.
@@ -171,14 +172,23 @@ class Consumer(multiprocessing.Process):
         """
         log.debug('processing statistics from %s', files)
 
-        # Merge multiple csv files to one pandas data frame
+        log.debug('merging multiple csv files to one Pandas data frame')
         data_frame = concat_csv(files)
 
         # Perform some sanitization on the raw data
         if '# pxname' in '# pxname':
+            log.debug('replace "# pxname" column with  "pxname"')
             data_frame.rename(columns={'# pxname': 'pxname'}, inplace=True)
         if 'Unnamed: 62' in data_frame.columns:
+            log.debug('remove "Unnamed: 62" column')
             data_frame.drop(labels=['Unnamed: 62'], axis=1, inplace=True)
+
+        if not isinstance(data_frame, pandas.DataFrame):
+            log.warning('Pandas data frame was not created')
+            return
+        if len(data_frame.index) == 0:
+            log.info('Pandas data frame is empty')
+            return
 
         # For some metric HAProxy returns nothing and replace them with zero
         data_frame.fillna(0, inplace=True)
@@ -194,6 +204,7 @@ class Consumer(multiprocessing.Process):
             data_frame (obj): A pandas data_frame ready for processing.
         """
         # Filtering for Pandas
+        log.debug('processing statistics for frontends')
         is_frontend = data_frame['svname'] == 'FRONTEND'
 
         # Get rows only for frontends and only a selection of columns
@@ -210,6 +221,8 @@ class Consumer(multiprocessing.Process):
                                            value=i[1], time=self.epoch)
                 dispatcher.signal('send', data=data)
 
+        log.debug('finished processing statistics for frontends')
+
     def process_backends(self, data_frame):
         """Process statistics for backends.
 
@@ -217,6 +230,7 @@ class Consumer(multiprocessing.Process):
             data_frame (obj): A pandas data_frame ready for processing.
         """
         # Filtering for Pandas
+        log.debug('processing statistics for backends')
         is_backend = data_frame['svname'] == 'BACKEND'
 
         # Get rows only for backends. For some metrics we need the sum and
@@ -241,6 +255,8 @@ class Consumer(multiprocessing.Process):
                                            value=i[1], time=self.epoch)
                 dispatcher.signal('send', data=data)
 
+        log.debug('finished processing statistics for backends')
+
     def process_servers(self, data_frame):
         """Process statistics for servers.
 
@@ -248,6 +264,7 @@ class Consumer(multiprocessing.Process):
             data_frame (obj): A pandas data_frame ready for processing.
         """
         # A filter for rows with stats for servers
+        log.debug('processing statistics for servers')
         is_server = data_frame['type'] == 2
 
         # Get rows only for servers. For some metrics we need the sum and
@@ -296,6 +313,8 @@ class Consumer(multiprocessing.Process):
                                            value=i[1],
                                            time=self.epoch)
                 dispatcher.signal('send', data=data)
+
+        log.debug('finished processing statistics for servers')
 
 
 def main():
