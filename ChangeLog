@@ -1,6 +1,18 @@
 CHANGES
 =======
 
+0.0.4
+-----
+
+* RELEASE 0.0.4 version
+* Break early when STOP item is fetched from queue
+* Don't enable local-store by default
+* Perform a clean shutdown in case no tasks are running
+* Wait for socket files to be created
+* Don't proceed if watched dir isn't created
+* Introduce a configuration parameter for process
+* Add systemd unit files
+
 0.0.3
 -----
 
