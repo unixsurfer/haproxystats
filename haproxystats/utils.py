@@ -258,8 +258,9 @@ class Dispatcher(object):
         Arguments:
             signal (str): A registered signal
         """
-        for handler in self.handlers.get(signal):
-            handler(**kwargs)
+        if signal in self.handlers:
+            for handler in self.handlers.get(signal):
+                handler(**kwargs)
 
 
 class GraphiteHandler():
