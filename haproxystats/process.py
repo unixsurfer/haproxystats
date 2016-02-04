@@ -91,6 +91,10 @@ class Consumer(multiprocessing.Process):
             while True:
                 log.info('waiting for item from the queue')
                 incoming_dir = self.tasks.get()
+                log.info('received item %s', incoming_dir)
+                if incoming_dir == STOP_SIGNAL:
+                    break
+
                 # incoming_dir => /var/lib/haproxystats/incoming/1454016646
                 self.epoch = os.path.basename(incoming_dir)
 
@@ -98,10 +102,6 @@ class Consumer(multiprocessing.Process):
                 # This *does not* error if a file handler is not registered.
                 dispatcher.signal('loop', local_store=self.local_store,
                                   epoch_time=self.epoch)
-
-                log.info('received item %s', incoming_dir)
-                if incoming_dir == STOP_SIGNAL:
-                    break
 
                 self.process_stats(incoming_dir)
 
