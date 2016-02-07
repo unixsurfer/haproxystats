@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.1.0
+-----
+
+* RELEASE 0.1.0
+* Shield workers from death due to errors from dispatchers
+
 0.0.5
 -----
 
