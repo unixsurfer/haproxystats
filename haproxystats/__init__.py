@@ -12,7 +12,7 @@ __copyright__ = 'Copyright 2016 Pavlos Parissis <pavlos.parissis@gmail.com'
 
 DEFAULT_OPTIONS = {
     'DEFAULT': {
-        'retry': '2',
+        'retries': '2',
         'timeout': '1',
         'interval': '2',
         'loglevel': 'info',
@@ -22,7 +22,7 @@ DEFAULT_OPTIONS = {
     },
     'pull': {
         'socket-dir': '/run/haproxy',
-        'retry': '1',
+        'retries': '1',
         'timeout': '1',
         'interval': '1',
         'pull-interval': '10',
@@ -37,8 +37,14 @@ DEFAULT_OPTIONS = {
     'graphite': {
         'server': '127.0.0.1',
         'port': '3002',
+        'retries': '3',
+        'interval': '1.8',
+        'timeout': '0.9',
+        'delay': '10',
+        'backoff': '2',
         'namespace': 'loadbalancers',
         'prefix_hostname': 'true',
         'fqdn': 'true',
+        'queue_size': '1000000'
     },
 }

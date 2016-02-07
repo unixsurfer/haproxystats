@@ -7,12 +7,12 @@ haproxystats.
 """
 import os
 import stat
-from collections import defaultdict
+from collections import defaultdict, deque
 import io
 import socket
 import shutil
 import logging
-import sys
+import time
 import glob
 import pyinotify
 import pandas
@@ -188,6 +188,11 @@ FRONTEND_METRICS = [
 ]
 
 
+class BrokenConnection(Exception):
+    def __init__(self, raised):
+        self.raised = raised
+
+
 def is_unix_socket(path):
     """Check if path is a valid UNIX socket.
 
@@ -236,6 +241,78 @@ def get_files(path, suffix):
     return files
 
 
+def log_hook(*args):
+    log.error('caught "%s" when "%s" was executed, remaining tries %s sleeping'
+              ' for %.2f seconds', args[0], args[1], args[2], args[3])
+
+
+def retries(retries=3,
+            interval=0.9,
+            backoff=3,
+            exceptions=(ConnectionResetError, ConnectionRefusedError,
+                        ConnectionAbortedError, BrokenPipeError, OSError),
+            hook=log_hook,
+            excpetion_to_raise=BrokenConnection):
+    """A decorator implementing retrying logic.
+
+    Arguments:
+        retries (int): Maximum times to retry
+        interval (float): Sleep this many seconds
+        backoff (int): Multiply delay by this factor after each failure
+        hook (callable obj): A function with the signature
+            myhook(tries_remaining, exception);
+
+    The decorator calls the function up to retries times if it raises an
+    exception from the tuple. The decorated function will only be retried if
+    it raises one of the specified exceptions. Additionally you may specify a
+    hook function which will be called prior to retrying with the number of
+    remaining tries and the exception instance. This is primarily intended to
+    give the opportunity to log the failure. Hook is not called after failure
+    if no retries remain.
+    """
+    def dec(func):
+        def decorated_func(*args, **kwargs):
+            backoff = args[0].backoff
+            backoff_interval = args[0].interval
+            retries = args[0].retries
+            raised = None
+            attempt = 0  # times to attempt a connect after a failure
+            if retries == -1:
+                # -1 means retry indefinitely
+                attempt = -1
+            elif retries == 0:
+                # Zero means don't retry
+                attempt = 1
+            else:
+                # any other value means retry N times
+                attempt = retries + 1
+            while attempt != 0:
+                if raised:
+                    if hook is not None:
+                        hook(raised,
+                             func.__name__,
+                             attempt,
+                             backoff_interval)
+                    time.sleep(backoff_interval)
+                    backoff_interval = backoff_interval * backoff
+                try:
+                    return func(*args, **kwargs)
+                except args[0].exceptions as error:
+                    raised = error
+                else:
+                    raised = None
+                    break
+
+                attempt -= 1
+
+            if raised:
+                raise BrokenConnection(raised=raised)
+
+        return decorated_func
+
+    return dec
+
+
 class Dispatcher(object):
     """Dispatch data to different handlers"""
     def __init__(self):
@@ -251,6 +328,19 @@ class Dispatcher(object):
             callbacl (obj): A callable object to call for the given signal.
             """
         self.handlers[signal].append(callback)
+
+    def unregister(self, signal, callback):
+        """Unregister a callback to a singal
+
+        Arguments:
+            signal (str): The name of the signal
+            callbacl (obj): A callable object to call for the given signal.
+        """
+        try:
+            self.handlers[signal].remove(callback)
+        except ValueError:
+            log.debug('tried to unregister %s from unknown %s signal',
+                      callback, signal)
 
     def signal(self, signal, **kwargs):
         """Run registered handlers
@@ -269,26 +359,96 @@ class GraphiteHandler():
     Arguments:
         server (str): Server name or IP address.
         port (int): Port to connect to
-        timeout (int): Timeout on connection
-        retry (int): Numbers to retry on connection failure
+        retries (int): Numbers to retry on connection failure
+        interval (float): Time to sleep between retries
+        timeout (float): Timeout on connection
+        delay (float): Time to delay a connection attempt after last failure
+        backoff (float): Multiply interval by this factor after each failure
+        queue_size (int): Maximum size of the queue
         """
-    def __init__(self, server, port=3002, timeout=1, retry=1):
+    def __init__(self,
+                 server,
+                 port=3002,
+                 retries=1,
+                 interval=2,
+                 timeout=10,
+                 delay=4,
+                 backoff=2,
+                 queue_size=1000000):
         self.server = server
         self.port = port
-        self.retry = retry
+        self.retries = retries
+        self.interval = interval
         self.timeout = timeout
+        self.delay = delay
+        self.backoff = backoff
+        self.queue_size = queue_size
+        self.dqueue = deque([], maxlen=self.queue_size)
+        self.connection = None
+        self.timer = None
+        self.failures = 1
+        self.exceptions = (ConnectionResetError, ConnectionRefusedError,
+                           ConnectionAbortedError, BrokenPipeError, OSError)
+
+    def open(self):
+        """Open a connection to graphite relay."""
+        try:
+            self._create_connection()
+        except BrokenConnection as error:
+            log.error('failed to connect to %s on port %s: %s', self.server,
+                      self.port, error.raised)
+        else:
+            log.info('successfully connected to %s on port %s', self.server,
+                     self.port)
+
+    @retries()
+    def _create_connection(self):
+        """Try X times to open a connection.
+
+        Exceptions are caught by the decorator which implements the retry
+        logic.
+        """
+        log.info('connecting to %s on port %s', self.server, self.port)
         self.connection = socket.create_connection((self.server, self.port),
                                                    timeout=self.timeout)
 
     def send(self, **kwargs):
-        """Send data to a graphite relay"""
-        self.connection.sendall(bytes(kwargs.get('data'), 'utf-8'))
+        """Send data to graphite relay"""
+        self.dqueue.appendleft(kwargs.get('data'))
+
+        while len(self.dqueue) != 0:
+            item = self.dqueue.popleft()
+            try:
+                self.connection.sendall(bytes(item, 'utf-8'))
+            # AttributeError means that open() method failed, all other
+            # exceptions indicate that connection died.
+            except (AttributeError, BrokenPipeError, ConnectionResetError,
+                    ConnectionAbortedError, ConnectionAbortedError):
+                self.dqueue.appendleft(item)
+                # Only try to connect again if some time has passed
+                if self.timer is None:  # It's 1st failure
+                    self.timer = time.time()
+                elif time.time() - self.timer > self.delay:
+                    log.info('%s seconds passed since last failed attempt to '
+                             'connect to graphite relay, trying to connect '
+                             'again right now', self.delay)
+                    self.timer = time.time()
+                    self.open()
+                return
+            else:
+                # Consume all items from the local deque before return to
+                # the caller. This causes a small delay at the benefit of
+                # flushing data which failed to be sent to graphite as soon as
+                # possible.
+                continue
 
     def close(self, **kwargs):
-        """Close TCP connection to Graphite relay"""
-        self.connection.close()
-        self.connection = socket.create_connection((self.server, self.port),
-                                                   timeout=self.timeout)
+        """Close TCP connection to graphite relay"""
+        log.info('closing connection to %s on port %s', self.server, self.port)
+        try:
+            self.connection.close()
+        except ConnectionRefusedError as error:
+            log.warning('closing connection failed: %s', error)
 
 
 dispatcher = Dispatcher()  # pylint: disable=I0011,C0103
@@ -297,8 +457,11 @@ dispatcher = Dispatcher()  # pylint: disable=I0011,C0103
 class FileHandler():
     """A handler to write data to a file"""
     def __init__(self):
-        self._input = io.StringIO()
+        self._input = None
         self._output = None
+
+    def open(self):
+        self._input = io.StringIO()
 
     def send(self, **kwargs):
         """Write data to a file-like object"""
@@ -311,7 +474,10 @@ class FileHandler():
             filepath (str): The pathname of the file
         """
         log.debug('filepath for local-store set to %s', filepath)
-        self._output = open(filepath, 'w')
+        try:
+            self._output = open(filepath, 'w')
+        except (OSError, PermissionError) as error:
+            log.error('failed to create %s: %s', filepath, error)
 
     def loop(self, **kwargs):
         """Rotate the file"""
@@ -319,21 +485,24 @@ class FileHandler():
                                 kwargs.get('epoch_time'))
         try:
             os.makedirs(base_dir)
-        except OSError as exc:
+        except (OSError, PermissionError) as error:
             # errno 17 => file exists
-            if exc.errno != 17:
-                sys.exit("failed to make directory {d}:{e}".format(
-                    d=base_dir, e=exc))
+            if error.errno != 17:
+                log.error('failed to make directory %s: %s', base_dir, error)
         self.set_path(filepath=os.path.join(base_dir, 'stats'))
 
-    def close(self, **kwargs):
+    def flush(self, **kwargs):
         """Flush data to disk"""
         self._input.seek(0)
-        shutil.copyfileobj(self._input, self._output)
-        self._output.flush()
-        self._output.close()
-        self._input.close()
-        self._input = io.StringIO()
+        try:
+            shutil.copyfileobj(self._input, self._output)
+            self._output.flush()
+            self._output.close()
+        except (OSError, PermissionError, AttributeError) as error:
+            log.error('failed to flush data to file: %s', error)
+            self._input.close()
+
+        self.open()
 
 
 class EventHandler(pyinotify.ProcessEvent):

@@ -91,7 +91,7 @@ def get(socket_file, cmd, storage_dir, loop, executor, timeout):
         storage_dir (str): The full path of the directory to save the response.
         loop (obj): A base event loop from asyncio module.
         executor (obj): A Threader executor to execute calls asynchronously.
-        timeout (int): Timeout for the connection to the socket.
+        timeout (float): Timeout for the connection to the socket.
 
     Returns:
         True if statistics from a UNIX sockets are save False otherwise.
@@ -148,7 +148,7 @@ def pull_stats(config, storage_dir, loop, executor):
     """
     # absolute directory path which contains UNIX socket files.
     socket_dir = config.get('pull', 'socket-dir')
-    timeout = config.getint('pull', 'timeout')
+    timeout = config.getfloat('pull', 'timeout')
 
     while True:
         socket_files = [f for f in glob.glob(socket_dir + '/*')

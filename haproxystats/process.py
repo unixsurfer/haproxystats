@@ -61,8 +61,9 @@ class Consumer(multiprocessing.Process):
         self.local_store = None
         self.file_handler = None
         self.epoch = None
-        graphite_tree = []
 
+        # Build graphite path (<namespace>.<hostname>.haproxy)
+        graphite_tree = []
         graphite_tree.append(self.config.get('graphite', 'namespace'))
         if self.config.getboolean('graphite', 'prefix_hostname'):
             if self.config.getboolean('graphite', 'fqdn'):
@@ -74,20 +75,30 @@ class Consumer(multiprocessing.Process):
                                        for x in graphite_tree])
 
     def run(self):
-        try:
-            if self.config.has_section('local-store'):
-                self.local_store = self.config.get('local-store', 'dir')
-                self.file_handler = FileHandler()
-                dispatcher.register('send', self.file_handler.send)
-                dispatcher.register('close', self.file_handler.close)
-                dispatcher.register('loop', self.file_handler.loop)
-            else:
-                self.local_store = None
+        if self.config.has_section('local-store'):
+            self.local_store = self.config.get('local-store', 'dir')
+            self.file_handler = FileHandler()
+            dispatcher.register('open', self.file_handler.open)
+            dispatcher.register('send', self.file_handler.send)
+            dispatcher.register('flush', self.file_handler.flush)
+            dispatcher.register('loop', self.file_handler.loop)
 
-            graphite = GraphiteHandler(self.config.get('graphite', 'server'),
-                                       self.config.getint('graphite', 'port'))
-            dispatcher.register('send', graphite.send)
-            dispatcher.register('close', graphite.close)
+        graphite = GraphiteHandler(
+            server=self.config.get('graphite', 'server'),
+            port=self.config.getint('graphite', 'port'),
+            timeout=self.config.getfloat('graphite', 'timeout'),
+            retries=self.config.getint('graphite', 'retries'),
+            interval=self.config.getfloat('graphite', 'interval'),
+            delay=self.config.getfloat('graphite', 'delay'),
+            backoff=self.config.getfloat('graphite', 'backoff'),
+            queue_size=self.config.getint('graphite', 'queue-size')
+        )
+        dispatcher.register('open', graphite.open)
+        dispatcher.register('send', graphite.send)
+
+        dispatcher.signal('open')
+
+        try:
             while True:
                 log.info('waiting for item from the queue')
                 incoming_dir = self.tasks.get()
@@ -105,11 +116,10 @@ class Consumer(multiprocessing.Process):
 
                 self.process_stats(incoming_dir)
 
-                # This flushes data to file and closes the TCP connection to
-                # graphite relay.
-                dispatcher.signal('close')
+                # This flushes data to file
+                dispatcher.signal('flush')
 
-                # Remove directory from incoming as we have sucessfully
+                # Remove directory from incoming as we have successfully
                 # processed the statistics.
                 log.debug('removing %s', incoming_dir)
                 shutil.rmtree(incoming_dir)
