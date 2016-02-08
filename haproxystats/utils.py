@@ -241,40 +241,53 @@ def get_files(path, suffix):
     return files
 
 
-def log_hook(*args):
-    log.error('caught "%s" when "%s" was executed, remaining tries %s sleeping'
-              ' for %.2f seconds', args[0], args[1], args[2], args[3])
+def log_hook(raised_exception, func_name, remaining_tries, sleep_time):
+    """Log a message with specific message.
+
+    Used as a hook in the retries decorator.
+
+    Arguments:
+        raised_exception (obj): An exception object
+        func_name (str): Name of the function
+        remaining_tries (int): Number of remaing tries
+        sleep_time (float): Sleep time
+    """
+    log.error('caught "%s" when "%s" was run, remaining tries %s, sleeping '
+              'for %.2f seconds', raised_exception, func_name, remaining_tries,
+              sleep_time)
 
 
 def retries(retries=3,
             interval=0.9,
             backoff=3,
+            delay=10,
             exceptions=(ConnectionResetError, ConnectionRefusedError,
                         ConnectionAbortedError, BrokenPipeError, OSError),
             hook=log_hook,
-            excpetion_to_raise=BrokenConnection):
-    """A decorator implementing retrying logic.
+            exception_to_raise=BrokenConnection):
+    """A decorator which implements a retrying logic.
 
     Arguments:
         retries (int): Maximum times to retry
-        interval (float): Sleep this many seconds
-        backoff (int): Multiply delay by this factor after each failure
-        hook (callable obj): A function with the signature
-            myhook(tries_remaining, exception);
+        interval (float): Sleep this many seconds between retries
+        backoff (int): Multiply interval by this factor after each failure
+        exceptions (tuple): A list of exceptions to catch
+        hook (callable obj): A function which accepts the following positional
+        arguments:
+            raised_exception, func_name, remaining_tries, sleep_time
+        exception_to_raise (obj): An exception to raise when maximum tries
+            have been reached.
 
     The decorator calls the function up to retries times if it raises an
     exception from the tuple. The decorated function will only be retried if
     it raises one of the specified exceptions. Additionally you may specify a
-    hook function which will be called prior to retrying with the number of
-    remaining tries and the exception instance. This is primarily intended to
-    give the opportunity to log the failure. Hook is not called after failure
-    if no retries remain.
+    hook function which will be called prior to retrying. This is primarily
+    intended to give the opportunity to log the failure. Hook is not called
+    after failure if no retries remain.
     """
     def dec(func):
         def decorated_func(*args, **kwargs):
-            backoff = args[0].backoff
-            backoff_interval = args[0].interval
-            retries = args[0].retries
+            backoff_interval = interval
             raised = None
             attempt = 0  # times to attempt a connect after a failure
             if retries == -1:
@@ -287,6 +300,7 @@ def retries(retries=3,
                 # any other value means retry N times
                 attempt = retries + 1
             while attempt != 0:
+                # an exception was raised, sleep and bump backoff
                 if raised:
                     if hook is not None:
                         hook(raised,
@@ -297,7 +311,7 @@ def retries(retries=3,
                     backoff_interval = backoff_interval * backoff
                 try:
                     return func(*args, **kwargs)
-                except args[0].exceptions as error:
+                except exceptions as error:
                     raised = error
                 else:
                     raised = None
@@ -306,7 +320,7 @@ def retries(retries=3,
                 attempt -= 1
 
             if raised:
-                raise BrokenConnection(raised=raised)
+                raise exception_to_raise(raised=raised)
 
         return decorated_func
 
@@ -393,7 +407,7 @@ class GraphiteHandler():
     def open(self):
         """Open a connection to graphite relay."""
         try:
-            self._create_connection()
+            self.connect()
         except BrokenConnection as error:
             log.error('failed to connect to %s on port %s: %s', self.server,
                       self.port, error.raised)
@@ -401,16 +415,24 @@ class GraphiteHandler():
             log.info('successfully connected to %s on port %s', self.server,
                      self.port)
 
-    @retries()
-    def _create_connection(self):
-        """Try X times to open a connection.
+    @property
+    def connect(self):
+        """A convenient wrapper so we can pass arguments to decorator"""
+        @retries(retries=self.retries, interval=self.interval,
+                 backoff=self.backoff, exceptions=self.exceptions,
+                 exception_to_raise=BrokenConnection)
+        def _create_connection():
+            """Try to open a connection.
 
-        Exceptions are caught by the decorator which implements the retry
-        logic.
-        """
-        log.info('connecting to %s on port %s', self.server, self.port)
-        self.connection = socket.create_connection((self.server, self.port),
-                                                   timeout=self.timeout)
+            Exceptions are caught by the decorator which implements the retry
+            logic.
+            """
+            log.info('connecting to %s on port %s', self.server, self.port)
+            self.connection =\
+                socket.create_connection((self.server, self.port),
+                                         timeout=self.timeout)
+
+        return _create_connection
 
     def send(self, **kwargs):
         """Send data to graphite relay"""
@@ -468,7 +490,7 @@ class FileHandler():
         self._input.write(kwargs.get('data'))
 
     def set_path(self, filepath):
-        """Set the filemath to send data.
+        """Set the filepath to send data.
 
         Arguments:
             filepath (str): The pathname of the file
