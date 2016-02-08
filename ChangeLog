@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.1.1
+-----
+
+* RELEASE 0.1.1
+* Rework the retries decorator
+
 0.1.0
 -----
 
