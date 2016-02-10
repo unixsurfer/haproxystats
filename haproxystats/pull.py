@@ -42,41 +42,6 @@ log = logging.getLogger('root')  # pylint: disable=I0011,C0103
 CMDS = ['show info', 'show stat']
 
 
-def shutdown(signal, loop, executor):
-    """Performs a clean shutdown"""
-    tasks_running = False
-    log.info('received %s', signal)
-
-    for task in asyncio.Task.all_tasks():
-        if not task.done():
-            tasks_running = True
-            log.info('cancelling %s task', task)
-            task.cancel()
-
-    if not tasks_running:
-        log.info('no tasks were running when %s signal received', signal)
-        log.info('waiting for threads to finish any pending IO tasks')
-        executor.shutdown(wait=True)
-        sys.exit(0)
-
-
-def write_file(filename, data):
-    """Writes data to a file.
-
-    Returns:
-        True if succeeds False otherwise.
-    """
-    try:
-        with open(filename, 'w') as file_handle:
-            file_handle.write(data.decode())
-    except OSError as exc:
-        log.critical('failed to write data %s', exc)
-        return False
-    else:
-        log.debug('data saved in %s', filename)
-        return True
-
-
 @asyncio.coroutine
 def get(socket_file, cmd, storage_dir, loop, executor, timeout):
     """Fetches data from a UNIX socket.
@@ -124,10 +89,24 @@ def get(socket_file, cmd, storage_dir, loop, executor, timeout):
     filename = os.path.join(storage_dir, filename)
     log.debug('going to save data to %s', filename)
     # Offload the writing to a thread so we don't block ourselves.
-    result = yield from loop.run_in_executor(executor,
-                                             write_file,
-                                             filename,
-                                             data)
+
+    def write_file():
+        """Writes data to a file.
+
+        Returns:
+            True if succeeds False otherwise.
+        """
+        try:
+            with open(filename, 'w') as file_handle:
+                file_handle.write(data.decode())
+        except OSError as exc:
+            log.critical('failed to write data %s', exc)
+            return False
+        else:
+            log.debug('data saved in %s', filename)
+            return True
+
+    result = yield from loop.run_in_executor(executor, write_file)
 
     return result
 
@@ -289,10 +268,30 @@ def main():
     loop = asyncio.get_event_loop()
     executor = ThreadPoolExecutor(max_workers=config.getint('pull', 'workers'))
     # Register shutdown to signals
-    loop.add_signal_handler(signal.SIGHUP, partial(shutdown, 'SIGHUP', loop,
-                                                   executor))
-    loop.add_signal_handler(signal.SIGTERM, partial(shutdown, 'SIGTERM', loop,
-                                                    executor))
+
+    def shutdown(signal):
+        """Performs a clean shutdown
+
+        Arguments:
+            signal (str): Signal name
+        """
+        tasks_running = False
+        log.info('received %s', signal)
+
+        for task in asyncio.Task.all_tasks():
+            if not task.done():
+                tasks_running = True
+                log.info('cancelling %s task', task)
+                task.cancel()
+
+        if not tasks_running:
+            log.info('no tasks were running when %s signal received', signal)
+            log.info('waiting for threads to finish any pending IO tasks')
+            executor.shutdown(wait=True)
+            sys.exit(0)
+
+    loop.add_signal_handler(signal.SIGHUP, partial(shutdown, 'SIGHUP'))
+    loop.add_signal_handler(signal.SIGTERM, partial(shutdown, 'SIGTERM'))
 
     # a temporary directory to store fetched data
     tmp_dst_dir = config['pull']['tmp-dst-dir']
