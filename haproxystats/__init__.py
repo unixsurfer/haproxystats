@@ -25,6 +25,7 @@ DEFAULT_OPTIONS = {
         'retries': '1',
         'timeout': '1',
         'interval': '1',
+        'pull-timeout': '0.5',
         'pull-interval': '10',
         'dst-dir': '/var/lib/haproxystats/incoming',
         'tmp-dst-dir': '/var/lib/haproxystats/incoming.tmp',

@@ -18,7 +18,7 @@ Options:
 """
 import os
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ALL_COMPLETED
 import sys
 import time
 import signal
@@ -129,6 +129,9 @@ def pull_stats(config, storage_dir, loop, executor):
     # absolute directory path which contains UNIX socket files.
     socket_dir = config.get('pull', 'socket-dir')
     timeout = config.getfloat('pull', 'timeout')
+    pull_timeout = config.getfloat('pull', 'pull-timeout')
+    if int(pull_timeout) == 0:
+        pull_timeout = None
 
     while True:
         socket_files = [f for f in glob.glob(socket_dir + '/*')
@@ -144,9 +147,12 @@ def pull_stats(config, storage_dir, loop, executor):
                   for socket_file in socket_files
                   for cmd in CMDS]
     # Launch all connections.
-    status = yield from asyncio.gather(*coroutines)
+    done, pending = yield from asyncio.wait(coroutines,
+                                            timeout=pull_timeout,
+                                            return_when=ALL_COMPLETED)
+    log.debug('task report, done:%s pending:%s tasks', len(done), len(pending))
 
-    return len(set(status)) == 1 and True in set(status)
+    return not pending  # only when all tasks are finished we claim success
 
 
 def supervisor(loop, config, executor):
