@@ -101,7 +101,8 @@ def get(socket_file, cmd, storage_dir, loop, executor, timeout):
     log.debug('connecting to UNIX socket %s', socket_file)
     try:
         reader, writer = yield from asyncio.wait_for(connect, timeout)
-    except (ConnectionRefusedError, PermissionError, OSError) as exc:
+    except (ConnectionRefusedError, PermissionError,  asyncio.TimeoutError,
+            OSError) as exc:
         log.critical(exc)
         return False
     else:
