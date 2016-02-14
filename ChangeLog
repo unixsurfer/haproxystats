@@ -1,6 +1,14 @@
 CHANGES
 =======
 
+0.1.2
+-----
+
+* RELEASE 0.1.2
+* Introduce pull-timeout
+* Keep isolate shutdown and write_file functions
+* Catch timeout during the connection
+
 0.1.1
 -----
 
