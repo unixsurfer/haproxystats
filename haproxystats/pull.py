@@ -34,7 +34,6 @@ from haproxystats import __version__ as VERSION
 from haproxystats import DEFAULT_OPTIONS
 from haproxystats.utils import (is_unix_socket, CMD_SUFFIX_MAP)
 
-
 LOG_FORMAT = ('%(asctime)s [%(process)d] [%(threadName)-10s:%(funcName)s] '
               '%(levelname)-8s %(message)s')
 logging.basicConfig(format=LOG_FORMAT)
@@ -185,11 +184,18 @@ def supervisor(loop, config, executor):
         try:
             os.makedirs(storage_dir)
         except OSError as exc:
-            msg = "failed to make directory {d}:{e}".format(d=storage_dir,
-                                                            e=exc)
-            log.critical(msg)
-            log.critical('a fatal error has occurred, exiting..')
-            break
+            # errno 17 => file exists
+            if exc.errno == 17:
+                old_data_files = glob.glob(storage_dir + '/*')
+                for old_file in old_data_files:
+                    log.info('removing old data file %s', old_file)
+                    os.remove(old_file)
+            else:
+                msg = "failed to make directory {d}:{e}".format(d=storage_dir,
+                                                                e=exc)
+                log.critical(msg)
+                log.critical('a fatal error has occurred, exiting..')
+                break
 
         try:
             log.debug('launching delegating coroutine')
