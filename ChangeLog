@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.1.3
+-----
+
+* RELEASE 0.1.3
+* Remove old data file from temporary directory
+
 0.1.2
 -----
 
