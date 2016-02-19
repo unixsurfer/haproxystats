@@ -136,8 +136,19 @@ class Consumer(multiprocessing.Process):
             pathname (str): A directory pathname where statistics from HAProxy
             are saved.
         """
-        self.haproxy_stats(get_files(pathname, FILE_SUFFIX_INFO))
-        self.sites_stats(get_files(pathname, FILE_SUFFIX_STAT))
+        files = get_files(pathname, FILE_SUFFIX_INFO)
+        if not files:
+            log.warning("%s directory doesn't contain any files with HAProxy "
+                        "daemon statistics", pathname)
+        else:
+            self.haproxy_stats(files)
+
+        files = get_files(pathname, FILE_SUFFIX_STAT)
+        if not files:
+            log.warning("%s directory doesn't contain any files with HAProxy "
+                        "statistics for sites", pathname)
+        else:
+            self.sites_stats(files)
 
     def haproxy_stats(self, files):
         """Process statistics for HAProxy process.
