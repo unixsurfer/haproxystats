@@ -172,6 +172,9 @@ class Consumer(multiprocessing.Process):
                     else:
                         raw_info_stats[key].append(numeric_value)
 
+        if not raw_info_stats:
+            log.error('parsing daemon statistics failed')
+            return
         # Here is where Pandas enters and starts its magic.
         dataframe = pandas.DataFrame(raw_info_stats)
         # Get sum/average for metric
@@ -196,28 +199,34 @@ class Consumer(multiprocessing.Process):
 
         log.debug('merging multiple csv files to one Pandas data frame')
         data_frame = concat_csv(files)
+        if data_frame is not None:
+            # Perform some sanitization on the raw data
+            if '# pxname' in '# pxname':
+                log.debug('replace "# pxname" column with  "pxname"')
+                data_frame.rename(columns={'# pxname': 'pxname'}, inplace=True)
+            if 'Unnamed: 62' in data_frame.columns:
+                log.debug('remove "Unnamed: 62" column')
+                try:
+                    data_frame.drop(labels=['Unnamed: 62'], axis=1,
+                                    inplace=True)
+                except ValueError as error:
+                    log.warning("failed to drop 'Unnamed: 62' column with: %s",
+                                error)
 
-        # Perform some sanitization on the raw data
-        if '# pxname' in '# pxname':
-            log.debug('replace "# pxname" column with  "pxname"')
-            data_frame.rename(columns={'# pxname': 'pxname'}, inplace=True)
-        if 'Unnamed: 62' in data_frame.columns:
-            log.debug('remove "Unnamed: 62" column')
-            data_frame.drop(labels=['Unnamed: 62'], axis=1, inplace=True)
+            if not isinstance(data_frame, pandas.DataFrame):
+                log.warning('Pandas data frame was not created')
+                return
+            if len(data_frame.index) == 0:
+                log.info('Pandas data frame is empty')
+                return
 
-        if not isinstance(data_frame, pandas.DataFrame):
-            log.warning('Pandas data frame was not created')
-            return
-        if len(data_frame.index) == 0:
-            log.info('Pandas data frame is empty')
-            return
+            # For some metrics HAProxy returns nothing, so we replace them
+            # with zeros
+            data_frame.fillna(0, inplace=True)
 
-        # For some metric HAProxy returns nothing and replace them with zero
-        data_frame.fillna(0, inplace=True)
-
-        self.process_frontends(data_frame)
-        self.process_backends(data_frame)
-        self.process_servers(data_frame)
+            self.process_frontends(data_frame)
+            self.process_backends(data_frame)
+            self.process_servers(data_frame)
 
     def process_frontends(self, data_frame):
         """Process statistics for frontends.

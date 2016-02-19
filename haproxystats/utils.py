@@ -214,13 +214,21 @@ def concat_csv(csv_files):
         csv_files (lst): A list of csv files.
 
     Returns:
-        A pandas data frame object.
+        A pandas data frame object or None if fails to parse csv_files
     """
     data_frames = []
     for csv_file in csv_files:
-        data_frames.append(pandas.read_csv(csv_file, low_memory=False))
-
-    return pandas.concat(data_frames)
+        try:
+            data_frame = pandas.read_csv(csv_file, low_memory=False)
+        except ValueError as error:
+            log.error('Pandas failed to parse %s file with: %s', csv_file,
+                      error)
+        else:
+            data_frames.append(data_frame)
+    if data_frames:
+        return pandas.concat(data_frames)
+    else:
+        return None
 
 
 def get_files(path, suffix):
