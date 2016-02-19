@@ -156,8 +156,8 @@ class Consumer(multiprocessing.Process):
         Arguments:
             files (list): A list of file which contain raw data from HAProxy
         """
-        log.debug('processing files %s', ','.join(files))
-        log.debug('processing statistics for HAProxy daemon')
+        log.info('processing statistics for HAProxy daemon')
+        log.debug('processing files %s', ' '.join(files))
         raw_info_stats = defaultdict(list)
         # Parse raw data and build a data structure
         log.debug('processing statistics from %s', files)
@@ -184,7 +184,7 @@ class Consumer(multiprocessing.Process):
                 path=self.graphite_path, metric=values[0].replace('.', '_'),
                 value=values[1], time=self.epoch)
             dispatcher.signal('send', data=data)
-        log.debug('finished processing statistics for HAProxy daemon')
+        log.info('finished processing statistics for HAProxy daemon')
 
     def sites_stats(self, files):
         """Process statistics for frontends/backends/servers.
