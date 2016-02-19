@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.1.4
+-----
+
+* RELEASE 0.1.4
+* Catch socket.timeout
+* Log filenames in debug mode
+
 0.1.3
 -----
 
