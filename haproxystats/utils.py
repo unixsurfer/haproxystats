@@ -402,7 +402,8 @@ class GraphiteHandler():
         self.timer = None
         self.failures = 1
         self.exceptions = (ConnectionResetError, ConnectionRefusedError,
-                           ConnectionAbortedError, BrokenPipeError, OSError)
+                           ConnectionAbortedError, BrokenPipeError, OSError,
+                           socket.timeout)
 
     def open(self):
         """Open a connection to graphite relay."""
@@ -445,7 +446,8 @@ class GraphiteHandler():
             # AttributeError means that open() method failed, all other
             # exceptions indicate that connection died.
             except (AttributeError, BrokenPipeError, ConnectionResetError,
-                    ConnectionAbortedError, ConnectionAbortedError):
+                    ConnectionAbortedError, ConnectionAbortedError,
+                    socket.timeout) as error:
                 self.dqueue.appendleft(item)
                 # Only try to connect again if some time has passed
                 if self.timer is None:  # It's 1st failure
