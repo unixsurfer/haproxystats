@@ -217,7 +217,7 @@ class Consumer(multiprocessing.Process):
                 log.warning('Pandas data frame was not created')
                 return
             if len(data_frame.index) == 0:
-                log.info('Pandas data frame is empty')
+                log.error('Pandas data frame is empty')
                 return
 
             # For some metrics HAProxy returns nothing, so we replace them
