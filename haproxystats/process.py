@@ -149,6 +149,7 @@ class Consumer(multiprocessing.Process):
         log.debug('processing statistics for HAProxy daemon')
         raw_info_stats = defaultdict(list)
         # Parse raw data and build a data structure
+        log.debug('processing statistics from %s', files)
         with fileinput.input(files=files) as file_input:
             for line in file_input:
                 if ': ' in line:
