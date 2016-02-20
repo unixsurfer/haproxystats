@@ -126,6 +126,7 @@ def pull_stats(config, storage_dir, loop, executor):
         True if statistics from *all* UNIX sockets are fetched False otherwise.
     """
     # absolute directory path which contains UNIX socket files.
+    results = []  # stores the result of finished tasks
     socket_dir = config.get('pull', 'socket-dir')
     timeout = config.getfloat('pull', 'timeout')
     pull_timeout = config.getfloat('pull', 'pull-timeout')
@@ -149,9 +150,17 @@ def pull_stats(config, storage_dir, loop, executor):
     done, pending = yield from asyncio.wait(coroutines,
                                             timeout=pull_timeout,
                                             return_when=ALL_COMPLETED)
-    log.debug('task report, done:%s pending:%s tasks', len(done), len(pending))
+    for task in done:
+        log.debug('task status: %s', task)
+        results.append(task.result())
+    log.debug('task report, done:%s pending:%s succeed:%s failed:%s',
+              len(done),
+              len(pending),
+              results.count(True),
+              results.count(False))
 
-    return not pending  # only when all tasks are finished we claim success
+    # only when all tasks are finished successfully we claim success
+    return not pending and len(set(results)) == 1 and True in set(results)
 
 
 def supervisor(loop, config, executor):
