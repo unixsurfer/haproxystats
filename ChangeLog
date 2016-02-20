@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.1.6
+-----
+
+* RELEASE 0.1.6 version
+* Avoid a crash if incoming directory can't be removed
+* Log version on startup
+
 0.1.5
 -----
 
@@ -22,6 +29,10 @@ CHANGES
 * Prevent passing empty data to Pandas
 * Reorder log messages and change severities
 * Warn if data directory doesn't have any files
+
+0.1.4
+-----
+
 * RELEASE 0.1.4
 * Catch socket.timeout
 * Log filenames in debug mode
