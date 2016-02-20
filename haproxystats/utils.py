@@ -479,8 +479,9 @@ class GraphiteHandler():
         log.info('closing connection to %s on port %s', self.server, self.port)
         try:
             self.connection.close()
-        except ConnectionRefusedError as error:
-            log.warning('closing connection failed: %s', error)
+        except (ConnectionRefusedError, ConnectionResetError,
+                ConnectionAbortedError) as exc:
+            log.warning('closing connection failed: %s', exc)
 
 
 dispatcher = Dispatcher()  # pylint: disable=I0011,C0103
