@@ -1,9 +1,27 @@
 CHANGES
 =======
 
-0.1.4
+0.1.5
 -----
 
+* RELEASE 0.1.5
+* Catch few more Connection exceptions on close
+* Report wall clock time for pulling statistics
+* Emit an error when we fail to remove temporary dir
+* Add retry logic on connections to UNIX sockets
+* Warn if tasks are canceled when reach pull-timeout
+* More reasonable values for pull retry logic
+* Update TODO
+* Fix a regression introduced by b61ce6bcc
+* Remove unused variable
+* Remove unnecessary space
+* Rename parameter signal to signalname
+* Rearrange log messages when parsing sites stats
+* Rearrange log messages when parsing daemon stats
+* Error if Pandas data frame is empty
+* Prevent passing empty data to Pandas
+* Reorder log messages and change severities
+* Warn if data directory doesn't have any files
 * RELEASE 0.1.4
 * Catch socket.timeout
 * Log filenames in debug mode
