@@ -1,17 +1,13 @@
 * sanity check config
 
 * exit if graphite section is not configured
+
 * Cross check list metrics
 
-* parse info stats
+* Check if metrics are in pandas data frame before perform operations on data
+  frames
 
-* query info stats
-
-* daemonize
-
-* logging
-
-* multiprocess mode with queues
+* Implement a retry logic for connecting to /pulling data from UNIX sockets
 
 * graphite namespace
 
