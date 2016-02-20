@@ -42,7 +42,7 @@ CMDS = ['show info', 'show stat']
 
 
 @asyncio.coroutine
-def get(socket_file, cmd, storage_dir, loop, executor, timeout):
+def get(socket_file, cmd, storage_dir, loop, executor, config):
     """Fetches data from a UNIX socket.
 
     Sends a command to HAProxy over UNIX socket, reads the response and then
@@ -55,19 +55,47 @@ def get(socket_file, cmd, storage_dir, loop, executor, timeout):
         storage_dir (str): The full path of the directory to save the response.
         loop (obj): A base event loop from asyncio module.
         executor (obj): A Threader executor to execute calls asynchronously.
-        timeout (float): Timeout for the connection to the socket.
+        config (obj): A configParser object which holds configuration.
 
     Returns:
         True if statistics from a UNIX sockets are save False otherwise.
     """
     # try to connect to the UNIX socket
-    connect = asyncio.open_unix_connection(socket_file)
     log.debug('connecting to UNIX socket %s', socket_file)
-    try:
-        reader, writer = yield from asyncio.wait_for(connect, timeout)
-    except (ConnectionRefusedError, PermissionError, asyncio.TimeoutError,
-            OSError) as exc:
-        log.critical(exc)
+    retries = config.getint('pull', 'retries')
+    timeout = config.getfloat('pull', 'timeout')
+    interval = config.getfloat('pull', 'interval')
+    attempt = 0  # times to attempt a connect after a failure
+    raised = None
+
+    if retries == -1:
+        attempt = -1  # -1 means retry indefinitely
+    elif retries == 0:
+        attempt = 1  # Zero means don't retry
+    else:
+        attempt = retries + 1  # any other value means retry N times
+    while attempt != 0:
+        if raised:  # an exception was raised sleep before the next retry
+            log.error('caught "%s" when connecting to UNIX socket %s, '
+                      'remaining tries %s, sleeping for %.2f seconds',
+                      raised, socket_file, attempt, interval)
+            yield from asyncio.sleep(interval)
+        try:
+            connect = asyncio.open_unix_connection(socket_file)
+            reader, writer = yield from asyncio.wait_for(connect, timeout)
+        except (ConnectionRefusedError, PermissionError, asyncio.TimeoutError,
+                OSError) as exc:
+            raised = exc
+        else:
+            log.debug('connection established to UNIX socket %s', socket_file)
+            raised = None
+            break
+
+        attempt -= 1
+
+    if raised:
+        log.error('failed to connect to UNIX socket %s after %s retries',
+                  socket_file, retries)
         return False
     else:
         log.debug('connection established to UNIX socket %s', socket_file)
@@ -128,7 +156,6 @@ def pull_stats(config, storage_dir, loop, executor):
     # absolute directory path which contains UNIX socket files.
     results = []  # stores the result of finished tasks
     socket_dir = config.get('pull', 'socket-dir')
-    timeout = config.getfloat('pull', 'timeout')
     pull_timeout = config.getfloat('pull', 'pull-timeout')
     if int(pull_timeout) == 0:
         pull_timeout = None
@@ -143,7 +170,7 @@ def pull_stats(config, storage_dir, loop, executor):
             break
 
     log.debug('pull statistics')
-    coroutines = [get(socket_file, cmd, storage_dir, loop, executor, timeout)
+    coroutines = [get(socket_file, cmd, storage_dir, loop, executor, config)
                   for socket_file in socket_files
                   for cmd in CMDS]
     # Launch all connections.

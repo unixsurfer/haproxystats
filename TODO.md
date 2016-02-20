@@ -7,8 +7,6 @@
 * Check if metrics are in pandas data frame before perform operations on data
   frames
 
-* Implement a retry logic for connecting to /pulling data from UNIX sockets
-
 * graphite namespace
 
     loadbalancers.lb203_lhr4_prod_foo_com
