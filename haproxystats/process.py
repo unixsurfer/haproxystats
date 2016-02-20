@@ -197,8 +197,8 @@ class Consumer(multiprocessing.Process):
         Arguments:
             files (list): A list of file which contain raw data from HAProxy
         """
-        log.debug('processing statistics from %s', files)
-
+        log.info('processing statistics for sites')
+        log.debug('processing files %s', ' '.join(files))
         log.debug('merging multiple csv files to one Pandas data frame')
         data_frame = concat_csv(files)
         if data_frame is not None:
@@ -229,6 +229,9 @@ class Consumer(multiprocessing.Process):
             self.process_frontends(data_frame)
             self.process_backends(data_frame)
             self.process_servers(data_frame)
+            log.info('finished processing statistics for sites')
+        else:
+            log.error('failed to process statistics for sites')
 
     def process_frontends(self, data_frame):
         """Process statistics for frontends.
