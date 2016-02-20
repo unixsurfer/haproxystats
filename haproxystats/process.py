@@ -122,7 +122,14 @@ class Consumer(multiprocessing.Process):
                 # Remove directory from incoming as we have successfully
                 # processed the statistics.
                 log.debug('removing %s', incoming_dir)
-                shutil.rmtree(incoming_dir)
+                try:
+                    shutil.rmtree(incoming_dir)
+                except (FileNotFoundError, PermissionError, OSError) as exc:
+                    log.critical('failed to remove directory %s with:%s. '
+                                 'This should not have happened as it means '
+                                 'another worker processed data from this '
+                                 'directory or something/someone removed the '
+                                 'directory!', incoming_dir, exc)
                 log.info('finished with %s', incoming_dir)
         except KeyboardInterrupt:
             log.critical('Ctrl-C received')
