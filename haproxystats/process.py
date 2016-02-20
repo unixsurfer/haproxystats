@@ -160,7 +160,6 @@ class Consumer(multiprocessing.Process):
         log.debug('processing files %s', ' '.join(files))
         raw_info_stats = defaultdict(list)
         # Parse raw data and build a data structure
-        log.debug('processing statistics from %s', files)
         with fileinput.input(files=files) as file_input:
             for line in file_input:
                 if ': ' in line:
@@ -173,21 +172,24 @@ class Consumer(multiprocessing.Process):
                         raw_info_stats[key].append(numeric_value)
 
         if not raw_info_stats:
-            log.error('parsing daemon statistics failed')
+            log.error('failed to parse daemon statistics')
             return
-        # Here is where Pandas enters and starts its magic.
-        dataframe = pandas.DataFrame(raw_info_stats)
-        # Get sum/average for metric
-        sums = dataframe.loc[:, DAEMON_METRICS].sum()
-        avgs = dataframe.loc[:, DAEMON_AVG_METRICS].mean()
-        # Pandas did all the hard work, let's join above tables and extract
-        # the statistics
-        for values in pandas.concat([sums, avgs], axis=0).items():
-            data = "{path}.daemon.{metric} {value} {time}\n".format(
-                path=self.graphite_path, metric=values[0].replace('.', '_'),
-                value=values[1], time=self.epoch)
-            dispatcher.signal('send', data=data)
-        log.info('finished processing statistics for HAProxy daemon')
+        else:
+            # Here is where Pandas enters and starts its magic.
+            dataframe = pandas.DataFrame(raw_info_stats)
+            # Get sum/average for metric
+            sums = dataframe.loc[:, DAEMON_METRICS].sum()
+            avgs = dataframe.loc[:, DAEMON_AVG_METRICS].mean()
+            # Pandas did all the hard work, let's join above tables and extract
+            # the statistics
+            for values in pandas.concat([sums, avgs], axis=0).items():
+                data = "{path}.daemon.{metric} {value} {time}\n".format(
+                    path=self.graphite_path,
+                    metric=values[0].replace('.', '_'),
+                    value=values[1],
+                    time=self.epoch)
+                dispatcher.signal('send', data=data)
+            log.info('finished processing statistics for HAProxy daemon')
 
     def sites_stats(self, files):
         """Process statistics for frontends/backends/servers.
