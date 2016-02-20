@@ -281,14 +281,14 @@ def main():
     executor = ThreadPoolExecutor(max_workers=config.getint('pull', 'workers'))
     # Register shutdown to signals
 
-    def shutdown(signal):
+    def shutdown(signalname):
         """Performs a clean shutdown
 
         Arguments:
-            signal (str): Signal name
+            signalname (str): Signal name
         """
         tasks_running = False
-        log.info('received %s', signal)
+        log.info('received %s', signalname)
 
         for task in asyncio.Task.all_tasks():
             if not task.done():
