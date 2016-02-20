@@ -273,8 +273,9 @@ def supervisor(loop, config, executor):
                           storage_dir, exc)
 
         # calculate sleep time which is interval minus elapsed time.
-        sleep = config.getint('pull', 'pull-interval') - (time.time() -
-                                                          start_time)
+        elapsed_time = time.time() - start_time
+        log.info('wall clock time in seconds: %.3f', elapsed_time)
+        sleep = config.getint('pull', 'pull-interval') - elapsed_time
         if 0 < sleep < config.getint('pull', 'pull-interval'):
             log.debug('sleeping for %.3fs secs', sleep)
             time.sleep(sleep)
