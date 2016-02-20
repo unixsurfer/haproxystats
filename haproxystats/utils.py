@@ -455,7 +455,7 @@ class GraphiteHandler():
             # exceptions indicate that connection died.
             except (AttributeError, BrokenPipeError, ConnectionResetError,
                     ConnectionAbortedError, ConnectionAbortedError,
-                    socket.timeout) as error:
+                    socket.timeout):
                 self.dqueue.appendleft(item)
                 # Only try to connect again if some time has passed
                 if self.timer is None:  # It's 1st failure
