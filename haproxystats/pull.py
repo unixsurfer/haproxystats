@@ -320,6 +320,7 @@ def main():
 
     log.setLevel(getattr(logging, config.get('pull', 'loglevel').upper(),
                          None))
+    log.info('haproxystats-pull %s version started', VERSION)
     # Setup our event loop
     loop = asyncio.get_event_loop()
     executor = ThreadPoolExecutor(max_workers=config.getint('pull', 'workers'))

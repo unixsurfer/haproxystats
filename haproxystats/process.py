@@ -386,6 +386,7 @@ def main():
     log.setLevel(getattr(logging, config.get('process', 'loglevel').upper(),
                          None))
 
+    log.info('haproxystats-processs %s version started', VERSION)
     # process incoming data which were created while processing was stoppped
     for pathname in glob.iglob(incoming_dir + '/*'):
         if os.path.isdir(pathname):
