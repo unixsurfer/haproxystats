@@ -266,7 +266,11 @@ def supervisor(loop, config, executor):
         else:
             log.critical('failed to pull stats')
             log.debug('removing temporary directory %s', storage_dir)
-            shutil.rmtree(storage_dir)
+            try:
+                shutil.rmtree(storage_dir)
+            except (FileNotFoundError, PermissionError, OSError) as exc:
+                log.error('failed to remove temporary directory %s with:%s',
+                          storage_dir, exc)
 
         # calculate sleep time which is interval minus elapsed time.
         sleep = config.getint('pull', 'pull-interval') - (time.time() -
