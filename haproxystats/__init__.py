@@ -2,7 +2,7 @@
 # vim:fenc=utf-8
 #
 """
-A collection of Python tools to process HAProxy stats
+A collection of Python tools to process HAProxy statistics.
 """
 __title__ = 'haproxystats'
 __author__ = 'Pavlos Parissis'
@@ -23,9 +23,9 @@ DEFAULT_OPTIONS = {
     'pull': {
         'socket-dir': '/run/haproxy',
         'retries': '1',
-        'timeout': '1',
-        'interval': '1',
-        'pull-timeout': '0.5',
+        'timeout': '0.1',
+        'interval': '0.5',
+        'pull-timeout': '2',
         'pull-interval': '10',
         'dst-dir': '/var/lib/haproxystats/incoming',
         'tmp-dst-dir': '/var/lib/haproxystats/incoming.tmp',
