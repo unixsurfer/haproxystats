@@ -158,6 +158,9 @@ def pull_stats(config, storage_dir, loop, executor):
               len(pending),
               results.count(True),
               results.count(False))
+    if len(pending) != 0:
+        log.warning('tasks reached their timeout threshold of %.2f seconds',
+                    pull_timeout)
 
     # only when all tasks are finished successfully we claim success
     return not pending and len(set(results)) == 1 and True in set(results)
