@@ -421,6 +421,7 @@ class GraphiteHandler():
             log.error('failed to connect to %s on port %s: %s', self.server,
                       self.port, error.raised)
         else:
+            self.connection.settimeout(self.timeout)
             log.info('successfully connected to %s on port %s', self.server,
                      self.port)
 
