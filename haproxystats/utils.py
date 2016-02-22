@@ -470,9 +470,9 @@ class GraphiteHandler():
                 return
             else:
                 # Consume all items from the local deque before return to
-                # the caller. This causes a small delay at the benefit of
-                # flushing data which failed to be sent to graphite as soon as
-                # possible.
+                # the caller. This causes a small delay to the caller at the
+                # benefit of flushing data as soon as possible which avoids
+                # gaps in graphs.
                 continue
 
     def close(self, **kwargs):
