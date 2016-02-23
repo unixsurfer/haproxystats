@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.1.8
+-----
+
+* RELEASE 0.1.8 version
+* Introduce queue-size for pull program
+* Log exception when we fail to send data to graphite
 * Avoid leaking FD when connection timeout
 * Log when we close TCP connection to graphite
 * Rewrite comment
