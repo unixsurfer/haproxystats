@@ -455,8 +455,7 @@ class GraphiteHandler():
             # AttributeError means that open() method failed, all other
             # exceptions indicate that connection died.
             except (AttributeError, BrokenPipeError, ConnectionResetError,
-                    ConnectionAbortedError, ConnectionAbortedError,
-                    socket.timeout):
+                    ConnectionAbortedError, ConnectionAbortedError):
                 self.dqueue.appendleft(item)
                 # Only try to connect again if some time has passed
                 if self.timer is None:  # It's 1st failure
@@ -467,6 +466,11 @@ class GraphiteHandler():
                              'again right now', self.delay)
                     self.timer = time.time()
                     self.open()
+                return
+            except socket.timeout:
+                # Don't leak FDs
+                self.close()
+                self.open()
                 return
             else:
                 # Consume all items from the local deque before return to
