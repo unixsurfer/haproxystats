@@ -455,15 +455,15 @@ class GraphiteHandler():
             # AttributeError means that open() method failed, all other
             # exceptions indicate that connection died.
             except (AttributeError, BrokenPipeError, ConnectionResetError,
-                    ConnectionAbortedError, ConnectionAbortedError):
+                    ConnectionAbortedError, ConnectionAbortedError) as exc:
                 self.dqueue.appendleft(item)
                 # Only try to connect again if some time has passed
                 if self.timer is None:  # It's 1st failure
                     self.timer = time.time()
                 elif time.time() - self.timer > self.delay:
-                    log.info('%s seconds passed since last failed attempt to '
-                             'connect to graphite relay, trying to connect '
-                             'again right now', self.delay)
+                    log.error('caught %s while sending data to graphite', exc)
+                    log.warning('%s secs passed since last connection failure '
+                                'trying to connect graphite', self.delay)
                     self.timer = time.time()
                     self.open()
                 return

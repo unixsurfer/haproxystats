@@ -1,6 +1,10 @@
 CHANGES
 =======
 
+* Avoid leaking FD when connection timeout
+* Log when we close TCP connection to graphite
+* Rewrite comment
+
 0.1.7
 -----
 
