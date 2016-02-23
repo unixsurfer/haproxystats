@@ -211,6 +211,12 @@ def supervisor(loop, config, executor):
 
     while True:
         log.debug('entering while loop')
+        queue = [x for x in os.listdir(dst_dir)
+                 if os.path.isdir(os.path.join(dst_dir, x))]
+        if len(queue) >= config.getint('pull', 'queue-size'):
+            log.warning('queue reached max size of %s, pulling statistics is '
+                        'suspended', len(queue))
+            time.sleep(config.getint('pull', 'pull-interval'))
         start_time = int(time.time())
         # HAProxy statistics are stored in a directory and we use retrieval
         # time(seconds since the Epoch) as a name of the directory.

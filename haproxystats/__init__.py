@@ -30,6 +30,7 @@ DEFAULT_OPTIONS = {
         'dst-dir': '/var/lib/haproxystats/incoming',
         'tmp-dst-dir': '/var/lib/haproxystats/incoming.tmp',
         'workers': '8',
+        'queue-size': '360',
     },
     'process': {
         'workers': '4',
