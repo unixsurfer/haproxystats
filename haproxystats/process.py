@@ -335,27 +335,27 @@ class Consumer(multiprocessing.Process):
                                                    time=self.epoch)
                 dispatcher.signal('send', data=data)
 
-        # Produce statistics for servers across all backends
-        server_sum_metrics = data_frame[is_server].loc[:, ['svname'] +
-                                                       SERVER_METRICS]
-        server_avg_metrics = data_frame[is_server].loc[:, ['svname'] +
-                                                       SERVER_AVG_METRICS]
-        server_sum_values = server_sum_metrics.groupby(['svname'],
-                                                       as_index=False).sum()
-        server_avg_values = server_avg_metrics.groupby(['svname'],
-                                                       as_index=False).mean()
-        server_values = pandas.merge(server_sum_values, server_avg_values,
-                                     on=['svname'])
-        for _, row in server_values.iterrows():
-            server = row[0].replace('.', '_')
-            for i in row[1:].iteritems():
-                data = ("{path}.server.{server}.{metric} {value} "
-                        "{time}\n").format(path=self.graphite_path,
-                                           server=server,
-                                           metric=i[0],
-                                           value=i[1],
-                                           time=self.epoch)
-                dispatcher.signal('send', data=data)
+        # # Produce statistics for servers across all backends
+        # server_sum_metrics = data_frame[is_server].loc[:, ['svname'] +
+        #                                                SERVER_METRICS]
+        # server_avg_metrics = data_frame[is_server].loc[:, ['svname'] +
+        #                                                SERVER_AVG_METRICS]
+        # server_sum_values = server_sum_metrics.groupby(['svname'],
+        #                                                as_index=False).sum()
+        # server_avg_values = server_avg_metrics.groupby(['svname'],
+        #                                                as_index=False).mean()
+        # server_values = pandas.merge(server_sum_values, server_avg_values,
+        #                              on=['svname'])
+        # for _, row in server_values.iterrows():
+        #     server = row[0].replace('.', '_')
+        #     for i in row[1:].iteritems():
+        #         data = ("{path}.server.{server}.{metric} {value} "
+        #                 "{time}\n").format(path=self.graphite_path,
+        #                                    server=server,
+        #                                    metric=i[0],
+        #                                    value=i[1],
+        #                                    time=self.epoch)
+        #         dispatcher.signal('send', data=data)
 
         log.debug('finished processing statistics for servers')
 
