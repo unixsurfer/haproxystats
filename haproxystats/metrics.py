@@ -45,60 +45,43 @@ DAEMON_METRICS = [
     'ZlibMemUsage',
 ]
 
-DAEMON_AVG_METRICS = [
-    'Idle_pct',
-]
-AVG_METRICS = [
-    'act',
-    'bck',
-    'check_duration',
-    'ctime',
-    'downtime',
-    'qlimit',
-    'qtime',
-    'rtime',
-    'throttle',
-    'ttime',
-    'weight',
-]
-SERVER_METRICS = [
-    'qcur',
-    'qmax',
-    'scur',
-    'smax',
-    'stot',
+DAEMON_AVG_METRICS = ['Idle_pct']
+
+COMMON = [
     'bin',
     'bout',
     'dresp',
-    'econ',
-    'eresp',
-    'wretr',
-    'wredis',
-    'chkfail',
-    'lbtot',
-    'rate',
-    'rate_max',
     'hrsp_1xx',
     'hrsp_2xx',
     'hrsp_3xx',
     'hrsp_4xx',
     'hrsp_5xx',
     'hrsp_other',
+    'rate',
+    'rate_max',
+    'scur',
+    'smax',
+    'stot'
+]
+
+SERVER_METRICS = [
+    'chkfail',
     'cli_abrt',
+    'econ',
+    'eresp',
+    'lbtot',
+    'qcur',
+    'qmax',
     'srv_abrt',
-]
-SERVER_AVG_METRICS = [
-    'qtime',
-    'rtime',
-    'throttle',
-    'ttime',
-    'weight',
-]
+    'wredis',
+    'wretr'
+] + COMMON
+
+SERVER_AVG_METRICS = ['qtime', 'rtime', 'throttle', 'ttime', 'weight']
+
 BACKEND_METRICS = [
     'act',
     'bck',
-    'bin',
-    'bout',
     'chkdown',
     'cli_abrt',
     'comp_byp',
@@ -107,59 +90,29 @@ BACKEND_METRICS = [
     'comp_rsp',
     'downtime',
     'dreq',
-    'dresp',
     'econ',
     'eresp',
-    'hrsp_1xx',
-    'hrsp_2xx',
-    'hrsp_3xx',
-    'hrsp_4xx',
-    'hrsp_5xx',
-    'hrsp_other',
     'lbtot',
     'qcur',
     'qmax',
-    'rate',
-    'rate_max',
-    'scur',
     'slim',
-    'smax',
     'srv_abrt',
-    'stot',
     'wredis',
     'wretr',
-]
-BACKEND_AVG_METRICS = [
-    'rtime',
-    'ctime',
-    'qtime',
-    'ttime',
-    'weight',
-]
+] + COMMON
+
+BACKEND_AVG_METRICS = ['rtime', 'ctime', 'qtime', 'ttime', 'weight']
+
 FRONTEND_METRICS = [
-    'bin',
-    'bout',
     'comp_byp',
     'comp_in',
     'comp_out',
     'comp_rsp',
     'dreq',
-    'dresp',
     'ereq',
-    'hrsp_1xx',
-    'hrsp_2xx',
-    'hrsp_3xx',
-    'hrsp_4xx',
-    'hrsp_5xx',
-    'hrsp_other',
-    'rate',
     'rate_lim',
-    'rate_max',
     'req_rate',
     'req_rate_max',
     'req_tot',
-    'scur',
-    'slim',
-    'smax',
-    'stot',
-]
+    'slim'
+] + COMMON
