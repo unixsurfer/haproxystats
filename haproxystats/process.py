@@ -56,11 +56,11 @@ class Consumer(multiprocessing.Process):
     """Process statistics and dispatch them to handlers."""
     def __init__(self, tasks, config):
         multiprocessing.Process.__init__(self)
-        self.tasks = tasks
-        self.config = config
+        self.tasks = tasks  # A queue to consume items
+        self.config = config  # Holds configuration
         self.local_store = None
         self.file_handler = None
-        self.epoch = None
+        self.epoch = None  # Points to the timestamp of statistics
 
         # Build graphite path (<namespace>.<hostname>.haproxy)
         graphite_tree = []
@@ -71,10 +71,22 @@ class Consumer(multiprocessing.Process):
             else:
                 graphite_tree.append(socket.gethostname().split('.')[0])
         graphite_tree.append('haproxy')
+        # Make sure we replace dots
         self.graphite_path = '.'.join([x.replace('.', '_')
                                        for x in graphite_tree])
 
     def run(self):
+        """Consumer of the queue which process statistics.
+
+        It is the target function of Process class. Consumes items from
+        the queue, processes data which are pulled down by haproxystats-pull
+        program and uses Pandas to perform all computations of statistics.
+
+        It exits when it receives STOP_SIGNAL as item.
+
+        To avoid orphan processes on the system, it must be robust against
+        failures and recover from them.
+        """
         if self.config.has_section('local-store'):
             self.local_store = self.config.get('local-store', 'dir')
             self.file_handler = FileHandler()
@@ -107,6 +119,7 @@ class Consumer(multiprocessing.Process):
                     break
 
                 # incoming_dir => /var/lib/haproxystats/incoming/1454016646
+                # epoch => 1454016646
                 self.epoch = os.path.basename(incoming_dir)
 
                 # update filename for file handler.
@@ -119,8 +132,7 @@ class Consumer(multiprocessing.Process):
                 # This flushes data to file
                 dispatcher.signal('flush')
 
-                # Remove directory from incoming as we have successfully
-                # processed the statistics.
+                # Remove directory as data have been successfully processed.
                 log.debug('removing %s', incoming_dir)
                 try:
                     shutil.rmtree(incoming_dir)
@@ -143,6 +155,9 @@ class Consumer(multiprocessing.Process):
             pathname (str): A directory pathname where statistics from HAProxy
             are saved.
         """
+        # statistics for HAProxy daemon and for frontend/backend/server have
+        # different format and haproxystats-pull save them using a different
+        # file suffix, so we can distinguish them easier.
         files = get_files(pathname, FILE_SUFFIX_INFO)
         if not files:
             log.warning("%s directory doesn't contain any files with HAProxy "
@@ -158,15 +173,23 @@ class Consumer(multiprocessing.Process):
             self.sites_stats(files)
 
     def haproxy_stats(self, files):
-        """Process statistics for HAProxy process.
+        """Process statistics for HAProxy daemon.
 
         Arguments:
-            files (list): A list of file which contain raw data from HAProxy
+            files (list): A list of files which contain the output of 'show
+            info' command on the stats socket of HAProxy.
         """
         log.info('processing statistics for HAProxy daemon')
         log.debug('processing files %s', ' '.join(files))
         raw_info_stats = defaultdict(list)
-        # Parse raw data and build a data structure
+        # Parse raw data and build a data structure, input looks like:
+        #     Name: HAProxy
+        #     Version: 1.6.3-4d747c-52
+        #     Release_date: 2016/02/25
+        #     Nbproc: 4
+        #     Uptime_sec: 59277
+        #     SslFrontendSessionReuse_pct: 0
+        #     ....
         with fileinput.input(files=files) as file_input:
             for line in file_input:
                 if ': ' in line:
@@ -202,7 +225,8 @@ class Consumer(multiprocessing.Process):
         """Process statistics for frontends/backends/servers.
 
         Arguments:
-            files (list): A list of file which contain raw data from HAProxy
+            files (list): A list of files which contain the output of 'show
+            stat' command on the stats socket of HAProxy.
         """
         log.info('processing statistics for sites')
         log.debug('processing files %s', ' '.join(files))
