@@ -1,6 +1,15 @@
 CHANGES
 =======
 
+0.1.13
+------
+
+* RELEASE 0.1.13
+* Make configurable the aggregation of server's stats
+* Make metric names configurable
+* Rearrange metric name lists
+* Add nagios checks
+
 0.1.12
 ------
 
