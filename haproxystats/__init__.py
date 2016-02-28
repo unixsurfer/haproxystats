@@ -41,7 +41,6 @@ DEFAULT_OPTIONS = {
         'port': '3002',
         'retries': '3',
         'interval': '1.8',
-        'timeout': '0.9',
         'delay': '10',
         'backoff': '2',
         'namespace': 'loadbalancers',

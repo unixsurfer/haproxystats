@@ -95,10 +95,18 @@ class Consumer(multiprocessing.Process):
             dispatcher.register('flush', self.file_handler.flush)
             dispatcher.register('loop', self.file_handler.loop)
 
+        timeout = self.config.getfloat('graphite', 'timeout')
+        connect_timeout = self.config.getfloat('graphite',
+                                               'connect-timeout',
+                                               fallback=timeout)
+        write_timeout = self.config.getfloat('graphite',
+                                             'write-timeout',
+                                             fallback=timeout)
         graphite = GraphiteHandler(
             server=self.config.get('graphite', 'server'),
             port=self.config.getint('graphite', 'port'),
-            timeout=self.config.getfloat('graphite', 'timeout'),
+            connect_timeout=connect_timeout,
+            write_timeout=write_timeout,
             retries=self.config.getint('graphite', 'retries'),
             interval=self.config.getfloat('graphite', 'interval'),
             delay=self.config.getfloat('graphite', 'delay'),

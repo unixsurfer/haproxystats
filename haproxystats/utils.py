@@ -220,7 +220,8 @@ class GraphiteHandler():
         port (int): Port to connect to
         retries (int): Numbers to retry on connection failure
         interval (float): Time to sleep between retries
-        timeout (float): Timeout on connection
+        connect_timeout (float): Timeout on connection
+        write_timeout (float): Timeout on sending data
         delay (float): Time to delay a connection attempt after last failure
         backoff (float): Multiply interval by this factor after each failure
         queue_size (int): Maximum size of the queue
@@ -230,7 +231,8 @@ class GraphiteHandler():
                  port=3002,
                  retries=1,
                  interval=2,
-                 timeout=10,
+                 connect_timeout=1,
+                 write_timeout=1,
                  delay=4,
                  backoff=2,
                  queue_size=1000000):
@@ -238,7 +240,8 @@ class GraphiteHandler():
         self.port = port
         self.retries = retries
         self.interval = interval
-        self.timeout = timeout
+        self.connect_timeout = connect_timeout
+        self.write_timeout = write_timeout
         self.delay = delay
         self.backoff = backoff
         self.queue_size = queue_size
@@ -250,6 +253,9 @@ class GraphiteHandler():
                            ConnectionAbortedError, BrokenPipeError, OSError,
                            socket.timeout)
 
+        log.debug('connect timeout %.2fsecs write timeout %.2fsecs',
+                  self.connect_timeout, self.write_timeout)
+
     def open(self):
         """Open a connection to graphite relay."""
         try:
@@ -258,7 +264,7 @@ class GraphiteHandler():
             log.error('failed to connect to %s on port %s: %s', self.server,
                       self.port, error.raised)
         else:
-            self.connection.settimeout(self.timeout)
+            self.connection.settimeout(self.write_timeout)
             log.info('successfully connected to %s on port %s', self.server,
                      self.port)
 
@@ -277,7 +283,7 @@ class GraphiteHandler():
             log.info('connecting to %s on port %s', self.server, self.port)
             self.connection =\
                 socket.create_connection((self.server, self.port),
-                                         timeout=self.timeout)
+                                         timeout=self.connect_timeout)
 
         return _create_connection
 
