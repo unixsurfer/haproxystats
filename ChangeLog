@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.1.11
+------
+
+* RELEASE 0.1.11 version
+* Fix regression introduced by 5d1003ca
+
 0.1.10
 ------
 
