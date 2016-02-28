@@ -1,6 +1,17 @@
 CHANGES
 =======
 
+0.1.10
+------
+
+* RELEASE 0.1.10 version
+* Use float rather int for measuring wall clock
+* Report wallclock time for processing statistics
+* Add support for connect and write timeouts
+* Remove metrics from utils.py
+* Move metrics to a separate module
+* Update docstrings/comments
+
 0.1.9
 -----
 
