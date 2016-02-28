@@ -311,17 +311,19 @@ def main():
 
     if args['--print']:
         for section in sorted(DEFAULT_OPTIONS):
-            print("[{}]".format(section))
-            for key, value in sorted(DEFAULT_OPTIONS[section].items()):
-                print("{k} = {v}".format(k=key, v=value))
-            print()
+            if section == 'pull' or section == 'DEFAULT':
+                print("[{}]".format(section))
+                for key, value in sorted(DEFAULT_OPTIONS[section].items()):
+                    print("{k} = {v}".format(k=key, v=value))
+                print()
         sys.exit(0)
     if args['--print-conf']:
         for section in sorted(config):
-            print("[{}]".format(section))
-            for key, value in sorted(config[section].items()):
-                print("{k} = {v}".format(k=key, v=value))
-            print()
+            if section == 'pull' or section == 'DEFAULT':
+                print("[{}]".format(section))
+                for key, value in sorted(config[section].items()):
+                    print("{k} = {v}".format(k=key, v=value))
+                print()
         sys.exit(0)
 
     log.setLevel(getattr(logging, config.get('pull', 'loglevel').upper(),

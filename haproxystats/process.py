@@ -406,6 +406,8 @@ def main():
 
     if args['--print']:
         for section in sorted(DEFAULT_OPTIONS):
+            if section == 'pull':
+                continue
             print("[{}]".format(section))
             for key, value in sorted(DEFAULT_OPTIONS[section].items()):
                 print("{k} = {v}".format(k=key, v=value))
@@ -413,6 +415,8 @@ def main():
         sys.exit(0)
     if args['--print-conf']:
         for section in sorted(config):
+            if section == 'pull':
+                continue
             print("[{}]".format(section))
             for key, value in sorted(config[section].items()):
                 print("{k} = {v}".format(k=key, v=value))
