@@ -125,6 +125,7 @@ class Consumer(multiprocessing.Process):
                 log.info('received item %s', incoming_dir)
                 if incoming_dir == STOP_SIGNAL:
                     break
+                start_time = time.time()
 
                 # incoming_dir => /var/lib/haproxystats/incoming/1454016646
                 # epoch => 1454016646
@@ -150,6 +151,8 @@ class Consumer(multiprocessing.Process):
                                  'another worker processed data from this '
                                  'directory or something/someone removed the '
                                  'directory!', incoming_dir, exc)
+                elapsed_time = time.time() - start_time
+                log.info('wall clock time in seconds: %.3f', elapsed_time)
                 log.info('finished with %s', incoming_dir)
         except KeyboardInterrupt:
             log.critical('Ctrl-C received')
