@@ -222,7 +222,7 @@ def supervisor(loop, config, executor):
         # time(seconds since the Epoch) as a name of the directory.
         # We first store them in a temporary place until we receive statistics
         # from all UNIX sockets.
-        storage_dir = os.path.join(tmp_dst_dir, str(start_time))
+        storage_dir = os.path.join(tmp_dst_dir, str(int(start_time)))
 
         # If our storage directory can't be created we can't do much, thus
         # abort main program.
