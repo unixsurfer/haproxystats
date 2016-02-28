@@ -34,11 +34,11 @@ from haproxystats import __version__ as VERSION
 from haproxystats import DEFAULT_OPTIONS
 from haproxystats.utils import (dispatcher, GraphiteHandler, get_files,
                                 FileHandler, EventHandler, concat_csv,
-                                FILE_SUFFIX_INFO, FILE_SUFFIX_STAT,
-                                DAEMON_AVG_METRICS, DAEMON_METRICS,
-                                SERVER_AVG_METRICS, SERVER_METRICS,
-                                BACKEND_AVG_METRICS, BACKEND_METRICS,
-                                FRONTEND_METRICS)
+                                FILE_SUFFIX_INFO, FILE_SUFFIX_STAT)
+from haproxystats.metrics import (DAEMON_AVG_METRICS, DAEMON_METRICS,
+                                  SERVER_AVG_METRICS, SERVER_METRICS,
+                                  BACKEND_AVG_METRICS, BACKEND_METRICS,
+                                  FRONTEND_METRICS)
 
 LOG_FORMAT = ('%(asctime)s [%(process)d] [%(processName)-11s] '
               '[%(funcName)-20s] %(levelname)-8s %(message)s')
