@@ -284,10 +284,17 @@ class Consumer(multiprocessing.Process):
         # Filtering for Pandas
         log.debug('processing statistics for frontends')
         is_frontend = data_frame['svname'] == 'FRONTEND'
+        frontend_metrics = self.config.get('process', 'frontend-metrics',
+                                           fallback=None)
+        if frontend_metrics is not None:
+            frontend_metrics = frontend_metrics.split(' ')
+        else:
+            frontend_metrics = FRONTEND_METRICS
+        log.debug('metric names for frontends %s', frontend_metrics)
 
         # Get rows only for frontends and only a selection of columns
         frontend_stats = data_frame[is_frontend].loc[:, ['pxname'] +
-                                                     FRONTEND_METRICS]
+                                                     frontend_metrics]
         # Group by frontend name and sum values for each column
         frontend_aggr_stats = frontend_stats.groupby(['pxname']).sum()
         for index, row in frontend_aggr_stats.iterrows():
@@ -311,10 +318,17 @@ class Consumer(multiprocessing.Process):
         log.debug('processing statistics for backends')
         is_backend = data_frame['svname'] == 'BACKEND'
 
+        backend_metrics = self.config.get('process', 'backend-metrics',
+                                          fallback=None)
+        if backend_metrics is not None:
+            backend_metrics = backend_metrics.split(' ')
+        else:
+            backend_metrics = BACKEND_METRICS
+        log.debug('metric names for backends %s', backend_metrics)
         # Get rows only for backends. For some metrics we need the sum and
         # for others the average, thus we split them.
         backend_stats_sum = data_frame[is_backend].loc[:, ['pxname'] +
-                                                       BACKEND_METRICS]
+                                                       backend_metrics]
         backend_stats_avg = data_frame[is_backend].loc[:, ['pxname'] +
                                                        BACKEND_AVG_METRICS]
         backend_aggr_sum = backend_stats_sum.groupby(['pxname'],
@@ -345,10 +359,17 @@ class Consumer(multiprocessing.Process):
         log.debug('processing statistics for servers')
         is_server = data_frame['type'] == 2
 
+        server_metrics = self.config.get('process', 'server-metrics',
+                                         fallback=None)
+        if server_metrics is not None:
+            server_metrics = server_metrics.split(' ')
+        else:
+            server_metrics = SERVER_METRICS
+        log.debug('metric names for servers %s', server_metrics)
         # Get rows only for servers. For some metrics we need the sum and
         # for others the average, thus we split them.
         server_stats_sum = data_frame[is_server].loc[:, ['pxname', 'svname'] +
-                                                     SERVER_METRICS]
+                                                     server_metrics]
         server_aggr_sum = server_stats_sum.groupby(['pxname', 'svname'],
                                                    as_index=False).sum()
         server_stats_avg = data_frame[is_server].loc[:, ['pxname', 'svname'] +
