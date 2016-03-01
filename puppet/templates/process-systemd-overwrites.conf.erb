@@ -1,0 +1,25 @@
+#############################################################################
+#
+#       This file is managed by Puppet
+#       any changes made locally will be lost.
+#
+# The master version of this file is at
+# puppet:///modules/haproxystats/templates/process-systemd-overwrites.conf.erb
+#
+#############################################################################
+<%-
+    _cpus = scope.lookupvar('::processorcount').to_i
+    if @process_CPUAffinity
+        _value = @process_CPUAffinity
+    else
+        if @process_workers.to_i >= _cpus
+            _workers = _cpus
+        else
+            _workers = @process_workers.to_i
+        end
+        cpu_list = Array (0.._cpus-1)
+        _value = cpu_list[-_workers..-1].join(' ')
+    end
+-%>
+[Service]
+CPUAffinity = <%=_value%>

@@ -1,0 +1,19 @@
+#############################################################################
+#
+#       This file is managed by Puppet
+#       any changes made locally will be lost.
+#
+# The master version of this file is at
+# puppet:///modules/haproxystats/templates/pull-systemd-overwrites.conf.erb
+#
+#############################################################################
+<%-
+    if @pull_CPUAffinity
+        _value = @pull_CPUAffinity
+    else
+        cpu_list = Array (0..scope.lookupvar('::processorcount').to_i-1)
+        _value = cpu_list[-1]
+    end
+-%>
+[Service]
+CPUAffinity = <%=_value%>

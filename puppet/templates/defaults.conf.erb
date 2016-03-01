@@ -1,0 +1,19 @@
+#############################################################################
+#
+#       This file is managed by Puppet
+#       any changes made locally will be lost.
+#
+# The master version of this file is created with concat module using
+# the following fragments:
+# puppet:///modules/haproxystats/templates/{defaults,pull,process}.conf.erb
+#
+#############################################################################
+[DEFAULT]
+loglevel = <%= @default_loglevel%>
+retries  = <%= @default_retries%>
+timeout  = <%= @default_timeout%>
+interval = <%= @default_interval%>
+
+[paths]
+base-dir = <%= @paths_base_dir%>
+

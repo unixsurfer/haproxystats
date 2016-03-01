@@ -1,0 +1,32 @@
+<%-
+    _cpus = scope.lookupvar('::processorcount').to_i
+    if @process_workers.to_i >= _cpus
+        _workers = _cpus
+    else
+        _workers = @process_workers.to_i
+    end
+-%>
+[process]
+loglevel    = <%= @process_loglevel %>
+workers     = <%= _workers %>
+src-dir     = <%= @process_src_dir %>
+aggr-server-metrics = <%= @process_aggr_server_metrics %>
+
+[graphite]
+server          = <%= @graphite_server %>
+port            = <%= @graphite_port %>
+retries         = <%= @graphite_retries %>
+interval        = <%= @graphite_interval %>
+connect_timeout = <%= @graphite_connect_timeout %>
+write_timeout   = <%= @graphite_write_timeout %>
+delay           = <%= @graphite_delay %>
+backoff         = <%= @graphite_backoff %>
+queue-size      = <%= @graphite_queue_size %>
+namespace       = <%= @graphite_namespace %>
+prefix_name     = <%= @graphite_prefix_hostname %>
+fqdn            = <%= @graphite_fqdn %>
+
+<%- if @local_store_enabled -%>
+[local-store]
+dir         = <%= @local_store_dir %>
+<%- end -%>
