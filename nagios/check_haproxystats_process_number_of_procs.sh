@@ -1,6 +1,19 @@
 #! /bin/bash
 #
 # check_haproxystats_process_number_of_procs.sh
+# Copyright (C) 2016 pparissis <pavlos.parissis@booking.com>
+#
+# Distributed under terms of the MIT license.
+#
+VERBOSE_ARG=
+
+while getopts ":v" opt; do
+  case $opt in
+    v)
+       VERBOSE_ARG=" -vv"
+       ;;
+  esac
+done
 if [[ -x /opt/blue-python/3.4/bin/haproxystats-process && -r /etc/haproxystats.conf ]]; then
     WORKERS=$(/opt/blue-python/3.4/bin/haproxystats-process -f /etc/haproxystats.conf -P|grep workers |awk '{print $3}')
     if [ $? -ne 0 ]; then
@@ -10,7 +23,8 @@ if [[ -x /opt/blue-python/3.4/bin/haproxystats-process && -r /etc/haproxystats.c
     PROCESSES=$(($WORKERS+1))
     msg=$(/usr/lib64/nagios/plugins/check_procs\
         -c "${PROCESSES}":"${PROCESSES}"\
-        --ereg-argument-array='/usr/local/bin/blue-python3.4 /opt/blue-python/3.4/bin/haproxystats-process -f /etc/haproxystats.conf')
+        --ereg-argument-array='/usr/local/bin/blue-python3.4 /opt/blue-python/3.4/bin/haproxystats-process -f /etc/haproxystats.conf'\
+        $VERBOSE_ARG)
     EXITCODE=$?
     if [[ ${EXITCODE} -ne 0 ]]; then
         echo "${msg}" "Number of processes must be ${PROCESSES} OPDOC: TBD"
