@@ -190,7 +190,7 @@ class haproxystats (
     monit::program {
       'haproxystats-process':
         scriptname => '/usr/lib64/nagios/plugins/check_haproxystats_process_number_of_procs.sh -v' ,
-        email      => 'prod.gtd@booking.com',
+        email      => 'bard@foo.com',
         tolerance  => 2,
         priority   => 'priority_1',
         nrestarts  => 2,
