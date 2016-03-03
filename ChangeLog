@@ -1,6 +1,17 @@
 CHANGES
 =======
 
+0.1.14
+------
+
+* RELEASE 0.1.14
+* Catch the case when FD is closed from outside
+* Update on puppet recipe
+* Add puppet classes
+* Add monit configuration
+* Updates on nagios checks
+* Update TODO
+
 0.1.13
 ------
 
