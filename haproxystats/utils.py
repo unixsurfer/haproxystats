@@ -298,7 +298,8 @@ class GraphiteHandler():
             # AttributeError means that open() method failed, all other
             # exceptions indicate that connection died.
             except (AttributeError, BrokenPipeError, ConnectionResetError,
-                    ConnectionAbortedError, ConnectionAbortedError) as exc:
+                    ConnectionAbortedError, ConnectionAbortedError,
+                    OSError) as exc:
                 self.dqueue.appendleft(item)
                 # Only try to connect again if some time has passed
                 if self.timer is None:  # It's 1st failure
