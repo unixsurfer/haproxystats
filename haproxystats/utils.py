@@ -218,7 +218,6 @@ class GraphiteHandler():
         self.dqueue = deque([], maxlen=self.queue_size)
         self.connection = None
         self.timer = None
-        self.failures = 1
         self.exceptions = (ConnectionResetError, ConnectionRefusedError,
                            ConnectionAbortedError, BrokenPipeError, OSError,
                            socket.timeout)
