@@ -26,6 +26,7 @@ CMD_SUFFIX_MAP = {'info': FILE_SUFFIX_INFO, 'stat': FILE_SUFFIX_STAT}
 
 
 class BrokenConnection(Exception):
+    """A wrapper of all possible exception during a TCP connect"""
     def __init__(self, raised):
         self.raised = raised
 
@@ -315,6 +316,7 @@ class FileHandler():
         self._output = None
 
     def open(self):
+        """Build a stringIO object in memory read to be used."""
         self._input = io.StringIO()
 
     def send(self, **kwargs):
