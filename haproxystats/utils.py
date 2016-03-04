@@ -108,7 +108,7 @@ def retries(retries=3,
                         ConnectionAbortedError, BrokenPipeError, OSError),
             hook=log_hook,
             exception_to_raise=BrokenConnection):
-    """A decorator which implements a retrying logic.
+    """A decorator which implements a retry logic.
 
     Arguments:
         retries (int): Maximum times to retry
@@ -133,17 +133,13 @@ def retries(retries=3,
             backoff_interval = interval
             raised = None
             attempt = 0  # times to attempt a connect after a failure
-            if retries == -1:
-                # -1 means retry indefinitely
+            if retries == -1:  # -1 means retry indefinitely
                 attempt = -1
-            elif retries == 0:
-                # Zero means don't retry
+            elif retries == 0:  # Zero means don't retry
                 attempt = 1
-            else:
-                # any other value means retry N times
+            else:  # any other value means retry N times
                 attempt = retries + 1
             while attempt != 0:
-                # an exception was raised, sleep and bump backoff
                 if raised:
                     if hook is not None:
                         hook(raised,
