@@ -1,6 +1,6 @@
 [Unit]
 Description=Processes statistics from HAProxy and pushes them to Graphite
-After=network.service syslog.target haproxystats-pull.service
+After=network.service syslog.target
 Wants=network.service syslog.target
 Documentation=https://github.com/unixsurfer/haproxystats
 
