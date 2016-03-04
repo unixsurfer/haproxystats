@@ -230,12 +230,13 @@ class GraphiteHandler():
         try:
             self.connect()
         except BrokenConnection as error:
+            self.connection = None
             log.error('failed to connect to %s on port %s: %s', self.server,
                       self.port, error.raised)
         else:
             self.connection.settimeout(self.write_timeout)
-            log.info('successfully connected to %s on port %s', self.server,
-                     self.port)
+            log.info('successfully connected to %s on port %s, TCP info'
+                     '%s', self.server, self.port, self.connection)
 
     @property
     def connect(self):
@@ -265,23 +266,30 @@ class GraphiteHandler():
             try:
                 self.connection.sendall(bytes(item, 'utf-8'))
             # AttributeError means that open() method failed, all other
-            # exceptions indicate that connection died.
+            # exceptions indicate connection problems
             except (AttributeError, BrokenPipeError, ConnectionResetError,
-                    ConnectionAbortedError, ConnectionAbortedError,
-                    OSError) as exc:
+                    ConnectionAbortedError, socket.timeout) as exc:
                 self.dqueue.appendleft(item)
                 # Only try to connect again if some time has passed
-                if self.timer is None:  # It's 1st failure
+                if self.timer is None:
                     self.timer = time.time()
+                    log.warning('graphite connection problem is detected')
+                    log.debug('timer is set to:%s', self.timer)
                 elif time.time() - self.timer > self.delay:
                     log.error('caught %s while sending data to graphite', exc)
-                    log.warning('%s secs passed since last connection failure '
-                                'trying to connect graphite', self.delay)
-                    self.timer = time.time()
+                    log.warning('%s secs since last failure', self.delay)
+                    log.info('TCP info: %s', self.connection)
+                    self.timer = None
+                    if not isinstance(exc, AttributeError):
+                        self.close()
+                    else:
+                        log.warning('connection is not available')
                     self.open()
                 return
-            except socket.timeout:
-                # Don't leak FDs
+            except OSError as exc:
+                # Unclear under which conditions we may get OSError
+                log.warning('caught %s while sending data to graphite', exc)
+                log.info('TCP info: %s', self.connection)
                 self.close()
                 self.open()
                 return
@@ -295,11 +303,15 @@ class GraphiteHandler():
     def close(self, **kwargs):
         """Close TCP connection to graphite relay"""
         log.info('closing connection to %s on port %s', self.server, self.port)
+        log.info('TCP info: %s', self.connection)
         try:
             self.connection.close()
-        except (ConnectionRefusedError, ConnectionResetError,
+        except (ConnectionRefusedError, ConnectionResetError, socket.timeout,
                 ConnectionAbortedError) as exc:
             log.warning('closing connection failed: %s', exc)
+        except (AttributeError, OSError) as exc:
+            log.critical('closing connection failed: %s. We should not receive'
+                         ' this exception, it is a BUG', exc)
         else:
             log.info('successfully closed connection to %s on port %s',
                      self.server, self.port)
