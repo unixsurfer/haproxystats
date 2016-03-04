@@ -1,6 +1,19 @@
 CHANGES
 =======
 
+0.1.15
+------
+
+* RELEASE 0.1.15 version
+* Handle TCP socket failures in a better way
+* Remove unused variable
+* Rename decorator, retries --> retry_on_failures
+* Add docstrings in functions
+* Remove log_hook as it is not needed anymore
+* Rearrange comments
+* Replace a for loop with a list comprehension
+* Remove unnecessary dependencies from Unit files
+
 0.1.14
 ------
 
