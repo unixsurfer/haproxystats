@@ -85,13 +85,13 @@ def get_files(path, suffix):
     return files
 
 
-def retries(retries=3,
-            interval=0.9,
-            backoff=3,
-            delay=10,
-            exceptions=(ConnectionResetError, ConnectionRefusedError,
-                        ConnectionAbortedError, BrokenPipeError, OSError),
-            exception_to_raise=BrokenConnection):
+def retry_on_failures(retries=3,
+                      interval=0.9,
+                      backoff=3,
+                      exceptions=(ConnectionResetError, ConnectionRefusedError,
+                                  ConnectionAbortedError, BrokenPipeError,
+                                  OSError),
+                      exception_to_raise=BrokenConnection):
     """A decorator which implements a retry logic.
 
     Arguments:
@@ -241,9 +241,9 @@ class GraphiteHandler():
     @property
     def connect(self):
         """A convenient wrapper so we can pass arguments to decorator"""
-        @retries(retries=self.retries, interval=self.interval,
-                 backoff=self.backoff, exceptions=self.exceptions,
-                 exception_to_raise=BrokenConnection)
+        @retry_on_failures(retries=self.retries, interval=self.interval,
+                           backoff=self.backoff, exceptions=self.exceptions,
+                           exception_to_raise=BrokenConnection)
         def _create_connection():
             """Try to open a connection.
 
