@@ -78,10 +78,8 @@ def get_files(path, suffix):
     Returns:
         A list of filenames
     """
-    files = []
-
-    for filename in glob.glob(path + '/*{s}'.format(s=suffix)):
-        files.append(filename)
+    files = [filename
+             for filename in glob.glob(path + '/*{s}'.format(s=suffix))]
 
     return files
 
