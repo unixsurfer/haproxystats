@@ -58,9 +58,8 @@ def concat_csv(csv_files):
     for csv_file in csv_files:
         try:
             data_frame = pandas.read_csv(csv_file, low_memory=False)
-        except ValueError as error:
-            log.error('Pandas failed to parse %s file with: %s', csv_file,
-                      error)
+        except (ValueError, OSError) as exc:
+            log.error('Pandas failed to parse %s file with: %s', csv_file, exc)
         else:
             data_frames.append(data_frame)
     if data_frames:
