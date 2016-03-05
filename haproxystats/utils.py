@@ -31,6 +31,25 @@ class BrokenConnection(Exception):
         self.raised = raised
 
 
+def load_file_content(filename):
+    """Build list from the content of a file
+
+    Arguments:
+        filename (str): A absolute path of a filename
+
+    Returns:
+        A list
+    """
+    try:
+        with open(filename, 'r') as _file:
+            _content = [line.strip() for line in _file.read().splitlines()]
+    except OSError as exc:
+        log.error('failed to read %s:%s', filename, exc)
+        return []
+    else:
+        return _content
+
+
 def is_unix_socket(path):
     """Check if path is a valid UNIX socket.
 
