@@ -124,8 +124,7 @@ class haproxystats (
       notify  => [
         Exec['systemd-daemon-reload'],
         Service['haproxystats-pull'],
-      ],
-      require  => File['/etc/systemd/system/haproxystats-pull.service.d'];
+      ];
     '/etc/systemd/system/haproxystats-process.service.d/overwrites.conf':
       ensure   => file,
       owner    => root,
@@ -135,8 +134,13 @@ class haproxystats (
       notify  => [
         Exec['systemd-daemon-reload'],
         Service['haproxystats-process'],
-      ],
-      require  => File['/etc/systemd/system/haproxystats-process.service.d'];
+      ];
+    '/usr/local/bin/haproxystats-process-monit-check.sh':
+      ensure => file,
+      owner  => root,
+      group  => root,
+      mode   => '0755',
+      content => template('haproxystats/haproxystats-process-monit-check.sh.erb');
   }
   concat {
     '/etc/haproxystats.conf':
@@ -186,14 +190,20 @@ class haproxystats (
     rotate_freq => $log_rotate_freq;
   }
 
-  if $enable_monit {
-    monit::program {
-      'haproxystats-process':
-        scriptname => '/usr/lib64/nagios/plugins/check_haproxystats_process_number_of_procs.sh -v' ,
-        email      => 'bard@foo.com',
-        tolerance  => 2,
-        priority   => 'priority_1',
-        nrestarts  => 2,
-    }
+  $real_enable_monit = $enable ? {
+    false     => false,
+    'stopped' => false,
+    default   => $enabled_monit,
+  }
+  monit::program {
+    'haproxystats-process':
+      enabled      => $real_enable_monit,
+      scriptname   => '/usr/local/bin/haproxystats-process-monit-check.sh' ,
+      email        => 'foo@bar.com',
+      tolerance    => 2,
+      priority     => 'priority_1',
+      nrestarts    => 2,
+      stop_timeout => 380,
+      require      => File['/usr/local/bin/haproxystats-process-monit-check.sh'];
   }
 }

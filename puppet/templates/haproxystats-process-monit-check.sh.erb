@@ -1,0 +1,27 @@
+#! /bin/bash
+####################################################################################
+#       This file is managed by Puppet                                             #
+#       any changes made locally will be lost.                                     #
+# puppet:///modules/haproxystats/templates/haproxystats-process-monit-chech.sh.erb #
+#                                                                                  #
+####################################################################################
+<%-
+    _processes = @process_workers.to_i + 1
+-%>
+if [[ -x /opt/blue-python/3.4/bin/haproxystats-process && -r /etc/haproxystats.conf ]]; then
+    msg=$(/usr/lib64/nagios/plugins/check_procs\
+        -c <%= _processes-%>:<%= _processes-%>\
+        --ereg-argument-array='^/usr/local/bin/blue-python3.4 /opt/blue-python/3.4/bin/haproxystats-process -f /etc/haproxystats.conf$'\
+        -u <%= @user-%>
+        -vv)
+    EXITCODE=$?
+    if [[ ${EXITCODE} -ne 0 ]]; then
+        echo "${msg}" "Number of processes must be <%= _processes-%> OPDOC: TBD"
+    else
+        echo "${msg}"
+    fi
+    exit ${EXITCODE}
+else
+    echo "OK: haproxystats-process isn't installed here"
+    exit 0
+fi
