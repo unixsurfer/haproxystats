@@ -1,5 +1,4 @@
 #! /bin/bash
-#
 osversion=$(/usr/local/bin/facter operatingsystemmajrelease)
 if [ "${osversion}" -lt 7 ]; then
     echo "OK: haproxystats-process doesn't run here as it only runs on CentOS version 7 and higher"
@@ -13,4 +12,3 @@ else
     echo "OK:" "${message}"
     exit 0
 fi
-

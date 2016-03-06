@@ -1,10 +1,4 @@
 #! /bin/bash
-#
-# check_haproxystats_process_number_of_procs.sh
-# Copyright (C) 2016 pparissis <pavlos.parissis@booking.com>
-#
-# Distributed under terms of the MIT license.
-#
 VERBOSE_ARG=
 
 while getopts ":v" opt; do
