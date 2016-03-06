@@ -23,7 +23,8 @@ if [[ -x /opt/blue-python/3.4/bin/haproxystats-process && -r /etc/haproxystats.c
     PROCESSES=$(($WORKERS+1))
     msg=$(/usr/lib64/nagios/plugins/check_procs\
         -c "${PROCESSES}":"${PROCESSES}"\
-        --ereg-argument-array='/usr/local/bin/blue-python3.4 /opt/blue-python/3.4/bin/haproxystats-process -f /etc/haproxystats.conf'\
+        --ereg-argument-array='^/usr/local/bin/blue-python3.4 /opt/blue-python/3.4/bin/haproxystats-process -f /etc/haproxystats.conf$'\
+        -u haproxystats\
         $VERBOSE_ARG)
     EXITCODE=$?
     if [[ ${EXITCODE} -ne 0 ]]; then
