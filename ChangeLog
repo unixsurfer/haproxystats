@@ -1,6 +1,19 @@
 CHANGES
 =======
 
+0.1.16
+------
+
+* RELEASE 0.1.16 version
+* Compute averages rather sum for act/bck metrics
+* Remove README under nagios
+* Update nagios and monit checks
+* Update puppet code
+* Add minimum version for pyinotify in requirements
+* Update requirements.txt
+* Add a function to load content of file to a list
+* Catch OSError when pandas parses csv file
+
 0.1.15
 ------
 
