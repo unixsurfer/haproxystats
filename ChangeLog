@@ -1,11 +1,18 @@
 CHANGES
 =======
 
+0.2.0
+-----
+
+* RELEASE 0.2.0 version
+* Rephrase few sentences and fix spelling mistakes
+
 0.1.16
 ------
 
 * RELEASE 0.1.16 version
 * Compute averages rather sum for act/bck metrics
+* Update README
 * Remove README under nagios
 * Update nagios and monit checks
 * Update puppet code
