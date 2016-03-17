@@ -17,25 +17,25 @@ It is designed to satisfy the following requirements:
 
 #. Fast and configurable processing of HAProxy statistics
 #. Support of multiprocess mode of HAProxy (nbproc > 1)
-#. Pulling statistics at very low intervals (10secs)
+#. Pull statistics at very low intervals (10secs)
 #. Flexible dispatching of statistics to different systems (Graphite,  kafka)
 
-The main characteristic of the design is the split of the pulling from the
-processing of statistics. This provides the ability to pull data as frequently
-as possible without worrying about the impact of processing time. It reduces
-also the risk of losing data in case of trouble during the processing phase.
-It runs locally on each load balancer node offering a decentralized setup for
+The main design characteristic is the split between pulling the statistics and
+processing them. This provides the ability to pull data as frequently
+as possible without worrying about the impact on processing time. It also
+reduces the risk of losing data in case of trouble during the processing phase.
+It runs locally on each load balancer node, offering a decentralized setup for
 the processing phase, but it can be easily extended in the future to have a
 centralized setup for the processing phase. In that centralized setup it will
-be possible to perform aggregation as well. Until then you can use
+be possible to perform aggregation as well. Until then users can deploy
 `carbon-c-relay`_ for aggregation.
 
-Because of this design haproxystats comes in two programs, the
-**haproxystats-pull** and the **haproxystats-process**.  The former pulls
-statistics from HAProxy via `stats socket`_ and it uses `asyncio`_ framework
+Because of this design haproxystats comes with two programs:
+**haproxystats-pull** and **haproxystats-process**. The former pulls
+statistics from HAProxy via `stats socket`_ and it uses the `asyncio`_ framework
 from Python to achieve high concurrency and low footprint. The latter
 processes the statistics and pushes them to various destinations. It utilizes
-`Pandas`_ for data analysis and multiprocess framework from Python.
+`Pandas`_ for data analysis and the multiprocess framework from Python.
 
 haproxystats requires Python 3.4, docopt and Pandas to be available in the
 system.
@@ -48,10 +48,10 @@ How haproxystats works
 
 
 haproxystats-pull sends `info`_ and `stat`_ commands to all haproxy processes
-for collecting statistics for the daemon and for all
+in order to collect statistics for the daemon and for all
 frontends/backends/servers. Data returned from each process and for each
-command are stored in individual files which are saved under one directory. The
-time, seconds since the epoch, of the retrieval is used to name that directory.
+command is stored in individual files which are saved under one directory. The
+time (seconds since the epoch) of retrieval is used to name that directory.
 haproxystats-process watches for changes on the parent directory and when a
 directory is created it adds its full path to the queue. Multiple workers pick
 up items from the queue (directories) and process statistics from those
@@ -60,7 +60,7 @@ directories.
 haproxystats-pull
 #################
 
-haproxystats-pull leverages asyncio framework from Python by utilizing
+haproxystats-pull leverages the asyncio framework from Python by utilizing
 coroutines to multiplex I/O access over several `stats socket`_, which are
 simple UNIX sockets. The actual task of storing the data to the file system is
 off-loaded to a very light `pool of threads`_ in order to avoid blocking the
@@ -68,7 +68,7 @@ coroutines during the disk IO phase.
 
 haproxystats-pull manages the *incoming* directory and makes sure directories
 are created with correct names. It also suspends the collection when the number
-of directories under *incoming* directory exceeds a threshold. This avoids
+of directories under the *incoming* directory exceeds a threshold. This avoids
 filling up the disk when haproxystats-process is unavailable for sometime.
 This an example of directory structure:
 
@@ -97,17 +97,17 @@ This an example of directory structure:
 haproxystats-process
 ####################
 
-haproxystats-process is a multiprocess program and parent process uses `inotify`_
-API from Linux kernel to watch for changes in *incoming* directory.
+haproxystats-process is a multiprocess program.The parent process uses the
+the Linux kernel's `inotify`_ API to watch for changes in *incoming* directory.
 It receives an event when a directory is either created or moved in *incoming*
 directory. The event contains the absolute path name of that directory. It
 maintains an internal queue in which it puts directory names. Multiple child
 processes pick directory names from the queue and process the data.
 Its worker dispatches statistics to various destinations. The directories are
 removed from *incoming* directory when all statistics are successfully
-processed. When haproxystats-process starts it scans *incoming* directory for
-directories and processes them instantly, so you don't lose statistics if
-haproxystats-process is unavailable for sometime.
+processed. When haproxystats-process starts it scans the *incoming* directory
+for new directories and processes them instantly, so you don't lose statistics
+if haproxystats-process is unavailable for sometime.
 
 Dispatchers
 ###########
@@ -117,8 +117,8 @@ haproxystats-process currently supports 2 different dispatchers.
 1. **Graphite**
 
 Pushes statistics to a Graphite system via a local or remote carbon-relay.
-Use `carbon-c-relay`_ as your carbon-relay as it is very fast and capable of
-handling millions of metrics per second. This dispatcher utilizes an internal
+The recommended method is to use `carbon-c-relay`_. It is very fast and capable
+of handling millions of metrics per second. This dispatcher utilizes an internal
 queue to store metrics which are failed to be sent to Graphite.
 
 An example of graphite namespace::
@@ -136,7 +136,7 @@ Stores statistics in the local disk. Use it only for debugging purposes.
 Queuing system
 ##############
 
-The *incoming* directory together with inotify API provides a simple queueing
+The *incoming* directory together with the inotify API provides a simple queueing
 system which is used as a communication channel between haproxystats-pull
 and haproxystats-process programs. There isn't any feedback mechanism in place,
 thus haproxystats-pull monitors the number of directories before it pulls
@@ -190,8 +190,8 @@ This is an example configuration file (/etc/haproxystats.conf)::
     #[local-store]
     #dir = ${paths:base-dir}/local-store
 
-All above settings are optional as haproxystats comes with default values for
-all them.
+All the above settings are optional as haproxystats comes with default values
+for all of them.
 
 DEFAULT section
 ###############
@@ -205,19 +205,19 @@ Log level to use, possible values are: debug, info, warning, error, critical
 * **retries** Defaults to **2**
 
 Number of times to retry a connection after a failure. Used by haproxystats-pull
-and haproxystats-process when they open a connection to UNIX socket and
+and haproxystats-process when they open a connection to a UNIX socket and
 Graphite respectively.
 
 * **timeout** Defaults to **1** (seconds)
 
 Time to wait for establishing a connection. Used by haproxystats-pull and
-haproxystats-process when they open a connection to UNIX socket and Graphite
+haproxystats-process when they open a connection to a UNIX socket and Graphite
 respectively.
 
 * **interval** Defaults to **2**
 
 Time to wait before trying to open a connection. Used by haproxystats-pull and
-haproxystats-process when they retry a connection to UNIX socket and Graphite
+haproxystats-process when they retry a connection to a UNIX socket and Graphite
 respectively.
 
 paths section
@@ -240,8 +240,8 @@ Number of times to reconnect to UNIX socket after a failure.
 
 * **timeout** Defaults to **0.1** (seconds)
 
-Time to wait for establishing a connection to UNIX socket. It makes not sense
-to set it higher than few ms as haproxy accepts the connection within 1-2ms.
+Time to wait for establishing a connection to UNIX socket. There is no need to
+set it higher than few ms as haproxy accepts a connection within 1-2ms.
 
 * **interval** Defaults to **0.5** (seconds)
 
@@ -253,7 +253,7 @@ take a bit more.
 * **pull-interval** Defaults to **10** (seconds)
 
 How often to pull statistics from HAProxy. A value of *1* second can overload
-haproxy processes in environments with thousands backends/servers.
+the haproxy processes in environments with thousands backends/servers.
 
 * **pull-timeout** Defaults to **2** (seconds)
 
@@ -271,7 +271,7 @@ to **dst-dir**.  haproxystats-pull stores statistics for each process under
 that directory and only when data from all haproxy processes are successfully
 retrieved they are moved to **dst-dir**. Make sure **dst-dir** and
 **tmp-dst-dir** are on the same file system, so the move of the directories
-become a rename which is an atomic and very fast operation.
+become a rename which is a quick and atomic operation.
 
 * **workers**  Defaults to **8**
 
@@ -290,8 +290,8 @@ the **dst-dir** setting from *pull* section.
 
 * **workers** Defaults to **4**
 
-Number of processes to use for processing statistics. These are real processes
-which consume a fair bit of CPU.
+Number of workers to use for processing statistics. These are real processes
+which can consume a fair bit of CPU.
 
 * **frontend-metrics** Unset by default
 
@@ -323,7 +323,7 @@ Graphite server to connect to.
 
 * **port**  Defaults to **3002**
 
-Port to connect to.
+Graphite port to connect to.
 
 * **retries** Defaults to **3**
 
@@ -349,7 +349,7 @@ A top level graphite namespace.
 
 * **prefix_hostname** Defaults to **true**
 
-Insert the hostname of the load balancer in the Graphite namespac, example::
+Insert the hostname of the load balancer in the Graphite namespace, example::
 
     loadbalancers.lb-01.haproxy.
 
@@ -361,7 +361,7 @@ Use FQDN or short name in the graphite namespace
 
 haproxystats-process uses a queue to store metrics which failed to be sent due
 to a connection error/timeout. This is a First In First Out queueing system.
-When queue reaches the limit then oldest items are removed to free space.
+When the queue reaches the limit, the oldest items are removed to free space.
 
 local-store section
 ###################
@@ -376,15 +376,15 @@ in environments with hundreds frontends/backends and thousands servers.
 
 * **dir** Defaults to **/var/lib/haproxystats/local-store**
 
-A directory to stores statistics after they have been processed. The currect
+A directory to stores statistics after they have been processed. The correct
 format is compatible with Graphite.
 
 Systemd integration
 -------------------
 
 haproxystats-pull and haproxystats-process are simple programs which are not
-daemonized and they emit logging messages to stdout. This is by design as it
-simplifies the code. The daemonetization and logging is off-loaded to systemd
+daemonized and they output logging messages to stdout. This is by design as it
+simplifies the code. The daemonenization and logging is off-loaded to systemd
 which has everything we need for that job.
 
 In the root directory of the project there are service files for both programs.
@@ -408,7 +408,7 @@ haproxystats programs.
 Graceful shutdown
 -----------------
 
-In an effort to reduce the lose of statistics both programs support graceful
+In an effort to reduce the loss of statistics both programs support graceful
 shutdown. When *SIGHUP* or *SIGTERM* signals are sent they perform a clean exit.
 When a signal is sent to haproxystats-process it may take some time for the
 program to exit, as it waits for all workers to empty the queue.
@@ -420,7 +420,7 @@ A puppet module is available which provides classes for configuring both
 programs. Because haproxystats-process is CPU bound program, CPU Affinity is
 configured using systemd. By default it pins the workers to the last CPUs.
 You should take care of pinning haproxy processes to other CPUs in order to
-avoid haproxystats-process *stealling* CPU cycles from haproxy. In production
+avoid haproxystats-process *stealing* CPU cycles from haproxy. In production
 servers you usually pin the first 80% of CPUs to haproxy processes and you
 leave the rest of CPUs for other processes. The default template of puppet
 module enforces this logic.
@@ -563,6 +563,8 @@ Contributers
 The following people have contributed to project with feedback and code reviews
 
 - Károly Nagy https://github.com/charlesnagy
+
+- Dan Achim https://github.com/danakim
 
 Licensing
 ---------
