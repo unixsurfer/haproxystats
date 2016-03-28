@@ -224,7 +224,7 @@ def supervisor(loop, config, executor):
             sleep = start_offset - time.time() % interval
             if sleep < 0:
                 sleep += interval
-            log.debug('sleeping for %.3fs secs', sleep)
+            log.info('sleeping for %.3fs secs', sleep)
             time.sleep(sleep)
             continue
         # HAProxy statistics are stored in a directory and we use retrieval
@@ -292,7 +292,7 @@ def supervisor(loop, config, executor):
         sleep = start_offset - time.time() % interval
         if sleep < 0:
             sleep += interval
-        log.debug('sleeping for %.3fs secs', sleep)
+        log.info('sleeping for %.3fs secs', sleep)
         time.sleep(sleep)
 
     # It is very unlikely that threads haven't finished their job by now, but
