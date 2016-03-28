@@ -1,6 +1,14 @@
 CHANGES
 =======
 
+0.2.1
+-----
+
+* RELEASE 0.2.1 version
+* Increase severity to info, to easier debugging
+* Replace in README UTF-8 characters with plain text
+* Provide more accurate sleep time to avoid interval drifting
+
 0.2.0
 -----
 
