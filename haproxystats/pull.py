@@ -209,20 +209,29 @@ def supervisor(loop, config, executor):
     tmp_dst_dir = config.get('pull', 'tmp-dst-dir')
     exit_code = 1
 
+    interval = config.getint('pull', 'pull-interval')
+    start_offset = time.time() % interval
+
     while True:
+        timestamp = time.time()
         log.debug('entering while loop')
         queue = [x for x in os.listdir(dst_dir)
                  if os.path.isdir(os.path.join(dst_dir, x))]
         if len(queue) >= config.getint('pull', 'queue-size'):
             log.warning('queue reached max size of %s, pulling statistics is '
                         'suspended', len(queue))
-            time.sleep(config.getint('pull', 'pull-interval'))
-        start_time = time.time()
+            # calculate sleep time
+            sleep = start_offset - time.time() % interval
+            if sleep < 0:
+                sleep += interval
+            log.debug('sleeping for %.3fs secs', sleep)
+            time.sleep(sleep)
+            continue
         # HAProxy statistics are stored in a directory and we use retrieval
         # time(seconds since the Epoch) as a name of the directory.
         # We first store them in a temporary place until we receive statistics
         # from all UNIX sockets.
-        storage_dir = os.path.join(tmp_dst_dir, str(int(start_time)))
+        storage_dir = os.path.join(tmp_dst_dir, str(int(timestamp)))
 
         # If our storage directory can't be created we can't do much, thus
         # abort main program.
@@ -278,13 +287,13 @@ def supervisor(loop, config, executor):
                 log.error('failed to remove temporary directory %s with:%s',
                           storage_dir, exc)
 
-        # calculate sleep time which is interval minus elapsed time.
-        elapsed_time = time.time() - start_time
-        log.info('wall clock time in seconds: %.3f', elapsed_time)
-        sleep = config.getint('pull', 'pull-interval') - elapsed_time
-        if 0 < sleep < config.getint('pull', 'pull-interval'):
-            log.debug('sleeping for %.3fs secs', sleep)
-            time.sleep(sleep)
+        log.info('wall clock time in seconds: %.3f', time.time() - timestamp)
+        # calculate sleep time
+        sleep = start_offset - time.time() % interval
+        if sleep < 0:
+            sleep += interval
+        log.debug('sleeping for %.3fs secs', sleep)
+        time.sleep(sleep)
 
     # It is very unlikely that threads haven't finished their job by now, but
     # they perform disk IO operations which can take some time in certain
