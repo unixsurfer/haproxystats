@@ -312,6 +312,16 @@ statistics are processed and this overwrites the default selection.
 
 Aggregates server's statistics across all backends.
 
+* **exclude-frontends** Unset by default
+
+A file which contains one frontend name per line for which processing is
+skipped.
+
+* **exclude-backends** Unset by default
+
+A file which contains one backend name per line for which processing is
+skipped.
+
 graphite section
 ################
 

@@ -36,7 +36,8 @@ from haproxystats import __version__ as VERSION
 from haproxystats import DEFAULT_OPTIONS
 from haproxystats.utils import (dispatcher, GraphiteHandler, get_files,
                                 FileHandler, EventHandler, concat_csv,
-                                FILE_SUFFIX_INFO, FILE_SUFFIX_STAT)
+                                FILE_SUFFIX_INFO, FILE_SUFFIX_STAT,
+                                load_file_content)
 from haproxystats.metrics import (DAEMON_AVG_METRICS, DAEMON_METRICS,
                                   SERVER_AVG_METRICS, SERVER_METRICS,
                                   BACKEND_AVG_METRICS, BACKEND_METRICS,
@@ -245,6 +246,7 @@ class Consumer(multiprocessing.Process):
         log.debug('processing files %s', ' '.join(files))
         log.debug('merging multiple csv files to one Pandas data frame')
         data_frame = concat_csv(files)
+        filter_backend = None
         if data_frame is not None:
             # Perform some sanitization on the raw data
             if '# pxname' in '# pxname':
@@ -271,8 +273,19 @@ class Consumer(multiprocessing.Process):
             data_frame.fillna(0, inplace=True)
 
             self.process_frontends(data_frame)
-            self.process_backends(data_frame)
-            self.process_servers(data_frame)
+
+            exclude_backends_file = self.config.get('process',
+                                                    'exclude-backends',
+                                                    fallback=None)
+            if exclude_backends_file is not None:
+                excluded_backends = load_file_content(exclude_backends_file)
+                if excluded_backends:
+                    log.info('excluding backends %s', excluded_backends)
+                    filter_backend =\
+                        ~data_frame['pxname'].isin(excluded_backends)
+
+            self.process_backends(data_frame, filter_backend=filter_backend)
+            self.process_servers(data_frame, filter_backend=filter_backend)
             log.info('finished processing statistics for sites')
         else:
             log.error('failed to process statistics for sites')
@@ -286,17 +299,31 @@ class Consumer(multiprocessing.Process):
         # Filtering for Pandas
         log.debug('processing statistics for frontends')
         is_frontend = data_frame['svname'] == 'FRONTEND'
-        frontend_metrics = self.config.get('process', 'frontend-metrics',
-                                           fallback=None)
-        if frontend_metrics is not None:
-            frontend_metrics = frontend_metrics.split(' ')
-        else:
-            frontend_metrics = FRONTEND_METRICS
-        log.debug('metric names for frontends %s', frontend_metrics)
+        filter_frontend = None
+        metrics = self.config.get('process', 'frontend-metrics', fallback=None)
 
-        # Get rows only for frontends and only a selection of columns
-        frontend_stats = data_frame[is_frontend].loc[:, ['pxname'] +
-                                                     frontend_metrics]
+        if metrics is not None:
+            metrics = metrics.split(' ')
+        else:
+            metrics = FRONTEND_METRICS
+        log.debug('metric names for frontends %s', metrics)
+
+        # Get rows only for frontends and only for a selection of columns
+        exclude_frontends_file = self.config.get(
+            'process', 'exclude-frontends', fallback=None)
+        if exclude_frontends_file is not None:
+            excluded_frontends = load_file_content(exclude_frontends_file)
+            if excluded_frontends:
+                log.info('excluding frontends %s', excluded_frontends)
+                filter_frontend =\
+                    ~data_frame['pxname'].isin(excluded_frontends)
+        if filter_frontend is not None:
+            frontend_stats =\
+                data_frame[is_frontend & filter_frontend].loc[:, ['pxname'] +
+                                                              metrics]
+        else:
+            frontend_stats = data_frame[is_frontend].loc[:, ['pxname'] +
+                                                         metrics]
         # Group by frontend name and sum values for each column
         frontend_aggr_stats = frontend_stats.groupby(['pxname']).sum()
         for index, row in frontend_aggr_stats.iterrows():
@@ -310,7 +337,7 @@ class Consumer(multiprocessing.Process):
 
         log.debug('finished processing statistics for frontends')
 
-    def process_backends(self, data_frame):
+    def process_backends(self, data_frame, *, filter_backend=None):
         """Process statistics for backends.
 
         Arguments:
@@ -320,19 +347,31 @@ class Consumer(multiprocessing.Process):
         log.debug('processing statistics for backends')
         is_backend = data_frame['svname'] == 'BACKEND'
 
-        backend_metrics = self.config.get('process', 'backend-metrics',
-                                          fallback=None)
-        if backend_metrics is not None:
-            backend_metrics = backend_metrics.split(' ')
+        metrics = self.config.get('process', 'backend-metrics', fallback=None)
+        if metrics is not None:
+            metrics = metrics.split(' ')
         else:
-            backend_metrics = BACKEND_METRICS
-        log.debug('metric names for backends %s', backend_metrics)
+            metrics = BACKEND_METRICS
+        log.debug('metric names for backends %s', metrics)
         # Get rows only for backends. For some metrics we need the sum and
         # for others the average, thus we split them.
-        backend_stats_sum = data_frame[is_backend].loc[:, ['pxname'] +
-                                                       backend_metrics]
-        backend_stats_avg = data_frame[is_backend].loc[:, ['pxname'] +
-                                                       BACKEND_AVG_METRICS]
+        if filter_backend is not None:
+            backend_stats_sum =\
+                data_frame[is_backend & filter_backend].loc[:, [
+                    'pxname'
+                    ] + metrics]
+            backend_stats_avg =\
+                data_frame[is_backend & filter_backend].loc[:, [
+                    'pxname'
+                    ] + BACKEND_AVG_METRICS]
+        else:
+            backend_stats_sum = data_frame[is_backend].loc[:, [
+                'pxname'
+                ] + metrics]
+            backend_stats_avg = data_frame[is_backend].loc[:, [
+                'pxname'
+                ] + BACKEND_AVG_METRICS]
+
         backend_aggr_sum = backend_stats_sum.groupby(['pxname'],
                                                      as_index=False).sum()
 
@@ -351,7 +390,7 @@ class Consumer(multiprocessing.Process):
 
         log.debug('finished processing statistics for backends')
 
-    def process_servers(self, data_frame):
+    def process_servers(self, data_frame, *, filter_backend=None):
         """Process statistics for servers.
 
         Arguments:
@@ -370,8 +409,24 @@ class Consumer(multiprocessing.Process):
         log.debug('metric names for servers %s', server_metrics)
         # Get rows only for servers. For some metrics we need the sum and
         # for others the average, thus we split them.
-        server_stats_sum = data_frame[is_server].loc[:, ['pxname', 'svname'] +
-                                                     server_metrics]
+        if filter_backend is not None:
+            server_stats_sum =\
+                data_frame[is_server & filter_backend].loc[:, [
+                    'pxname',
+                    'svname'
+                    ] + server_metrics]
+            server_stats_avg =\
+                data_frame[is_server & filter_backend].loc[:, [
+                    'pxname',
+                    'svname'
+                    ] + SERVER_AVG_METRICS]
+        else:
+            server_stats_sum = data_frame[is_server].loc[:, [
+                'pxname',
+                'svname'] + server_metrics]
+            server_stats_avg = data_frame[is_server].loc[:, [
+                'pxname',
+                'svname'] + SERVER_AVG_METRICS]
         server_aggr_sum = server_stats_sum.groupby(['pxname', 'svname'],
                                                    as_index=False).sum()
         server_stats_avg = data_frame[is_server].loc[:, ['pxname', 'svname'] +
