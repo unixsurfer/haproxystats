@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# pylint: disable=too-many-locals
+# pylint: disable=too-many-branches
 """Processes statistics from HAProxy and pushes them to Graphite
 
 Usage:
@@ -47,7 +49,7 @@ log = logging.getLogger('root')  # pylint: disable=I0011,C0103
 
 watcher = pyinotify.WatchManager()  # pylint: disable=I0011,C0103
 # watched events
-MASK = pyinotify.IN_CREATE | pyinotify.IN_MOVED_TO
+MASK = pyinotify.IN_CREATE | pyinotify.IN_MOVED_TO  # pylint: disable=no-member
 
 STOP_SIGNAL = 'STOP'
 
