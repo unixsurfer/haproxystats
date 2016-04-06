@@ -454,8 +454,9 @@ def main():
     num_consumers = config.getint('process', 'workers')
     incoming_dir = config.get('process', 'src-dir')
 
-    log.setLevel(getattr(logging, config.get('process', 'loglevel').upper(),
-                         None))
+    loglevel =\
+        config.get('process', 'loglevel').upper()  # pylint: disable=no-member
+    log.setLevel(getattr(logging, loglevel, None))
 
     log.info('haproxystats-processs %s version started', VERSION)
     # process incoming data which were created while processing was stoppped
