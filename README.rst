@@ -75,24 +75,24 @@ This an example of directory structure:
 .. code-block:: bash
 
     incoming
-    |-- 1457298067
-    |   |-- admin1.sock_info
-    |   |-- admin1.sock_stat
-    |   |-- admin2.sock_info
-    |   |-- admin2.sock_stat
-    |   |-- admin3.sock_info
-    |   |-- admin3.sock_stat
-    |   |-- admin4.sock_info
-    |   |-- admin4.sock_stat
-    |-- 1457298072
-        |-- admin1.sock_info
-        |-- admin1.sock_stat
-        |-- admin2.sock_info
-        |-- admin2.sock_stat
-        |-- admin3.sock_info
-        |-- admin3.sock_stat
-        |-- admin4.sock_info
-        |-- admin4.sock_stat
+    ├── 1457298067
+    │   ├── admin1.sock_info
+    │   ├── admin1.sock_stat
+    │   ├── admin2.sock_info
+    │   ├── admin2.sock_stat
+    │   ├── admin3.sock_info
+    │   ├── admin3.sock_stat
+    │   ├── admin4.sock_info
+    │   └── admin4.sock_stat
+    └── 1457298072
+        ├── admin1.sock_info
+        ├── admin1.sock_stat
+        ├── admin2.sock_info
+        ├── admin2.sock_stat
+        ├── admin3.sock_info
+        ├── admin3.sock_stat
+        ├── admin4.sock_info
+        └── admin4.sock_stat
 
 haproxystats-process
 ####################
