@@ -217,8 +217,18 @@ def supervisor(loop, config, executor):
     while True:
         timestamp = time.time()
         log.debug('entering while loop')
-        queue = [x for x in os.listdir(dst_dir)
-                 if os.path.isdir(os.path.join(dst_dir, x))]
+        try:
+            queue = [x for x in os.listdir(dst_dir)
+                     if os.path.isdir(os.path.join(dst_dir, x))]
+        except FileNotFoundError as exc:
+            log.warning('%s disappeared: %s. Going to create it', dst_dir, exc)
+            try:
+                os.makedirs(dst_dir)
+            except OSError as exc:
+                # errno 17 => file exists
+                if exc.errno != 17:
+                    sys.exit("failed to make directory {d}:{e}".format(
+                        d=dst_dir, e=exc))
         if len(queue) >= config.getint('pull', 'queue-size'):
             log.warning('queue reached max size of %s, pulling statistics is '
                         'suspended', len(queue))
