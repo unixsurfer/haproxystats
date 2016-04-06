@@ -1,6 +1,20 @@
 CHANGES
 =======
 
+0.3.0
+-----
+
+* RELEASE 0.3.0 version
+* Add support for excluding frontends and backends
+* Revert "Replace in README UTF-8 characters with plain text"
+* Refactor the loglevel part
+* Disable pylint checks for few cases
+* Make load_file_content to skip commented out lines
+* Catch the case when incoming directory disappears
+* Disable few pylint checks
+* Remove unnecessary fallback
+* Add aggr-server-metrics parameter in the defaults
+
 0.2.1
 -----
 
