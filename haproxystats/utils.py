@@ -14,6 +14,7 @@ import shutil
 import logging
 import time
 import glob
+import re
 import pyinotify
 import pandas
 
@@ -40,9 +41,11 @@ def load_file_content(filename):
     Returns:
         A list
     """
+    commented = re.compile(r'\s*?#')
     try:
         with open(filename, 'r') as _file:
-            _content = [line.strip() for line in _file.read().splitlines()]
+            _content = [line.strip() for line in _file.read().splitlines()
+                        if not commented.match(line)]
     except OSError as exc:
         log.error('failed to read %s:%s', filename, exc)
         return []
