@@ -391,8 +391,7 @@ class Consumer(multiprocessing.Process):
                                                    time=self.epoch)
                 dispatcher.signal('send', data=data)
 
-        if self.config.getboolean('process', 'aggr-server-metrics',
-                                  fallback=False):
+        if self.config.getboolean('process', 'aggr-server-metrics'):
             log.info('aggregate stats for servers across all backends')
             # Produce statistics for servers across all backends
             server_sum_metrics =\
