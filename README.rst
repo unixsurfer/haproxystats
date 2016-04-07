@@ -185,7 +185,7 @@ This is an example configuration file (/etc/haproxystats.conf)::
     delay           = 10
     backoff         = 2
     namespace       = loadbalancers
-    prefix_hostname = true
+    prefix-hostname = true
     fqdn            = true
     queue-size      = 1000000
 
@@ -367,7 +367,7 @@ A simple exponential backoff to apply for each retry.
 
 A top level graphite namespace.
 
-* **prefix_hostname** Defaults to **true**
+* **prefix-hostname** Defaults to **true**
 
 Insert the hostname of the load balancer in the Graphite namespace, example::
 

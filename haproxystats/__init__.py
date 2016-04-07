@@ -47,7 +47,7 @@ DEFAULT_OPTIONS = {
         'delay': '10',
         'backoff': '2',
         'namespace': 'loadbalancers',
-        'prefix_hostname': 'true',
+        'prefix-hostname': 'true',
         'fqdn': 'true',
         'queue-size': '1000000'
     },

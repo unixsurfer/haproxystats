@@ -68,7 +68,7 @@ class Consumer(multiprocessing.Process):
         # Build graphite path (<namespace>.<hostname>.haproxy)
         graphite_tree = []
         graphite_tree.append(self.config.get('graphite', 'namespace'))
-        if self.config.getboolean('graphite', 'prefix_hostname'):
+        if self.config.getboolean('graphite', 'prefix-hostname'):
             if self.config.getboolean('graphite', 'fqdn'):
                 graphite_tree.append(socket.gethostname())
             else:
