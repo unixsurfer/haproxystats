@@ -1,6 +1,17 @@
 CHANGES
 =======
 
+0.3.1
+-----
+
+* RELEASE 0.3.1 version
+* Document queue-size parameter of pull section
+* Rephrase the paragraph in Queuing system
+* Use fallback to True for prefix-hostname
+* User hyphen rather underscore
+* Use correct key name for queue-size parameter
+* Add connect and write timeout to defaults/README
+
 0.3.0
 -----
 
