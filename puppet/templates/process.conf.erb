@@ -11,19 +11,26 @@ loglevel    = <%= @process_loglevel %>
 workers     = <%= _workers %>
 src-dir     = <%= @process_src_dir %>
 aggr-server-metrics = <%= @process_aggr_server_metrics %>
+<%- if @process_exclude_frontends.size > 0 -%>
+exclude-frontends   = <%= @exclude_frontends_filename %>
+<%- end -%>
+<%- if @process_exclude_backends.size > 0 -%>
+exclude-backends    = <%= @exclude_backends_filename %>
+<%- end -%>
+compute-percegates  = <%= @process_compute_percentages %>
 
 [graphite]
 server          = <%= @graphite_server %>
 port            = <%= @graphite_port %>
 retries         = <%= @graphite_retries %>
 interval        = <%= @graphite_interval %>
-connect_timeout = <%= @graphite_connect_timeout %>
-write_timeout   = <%= @graphite_write_timeout %>
+connect-timeout = <%= @graphite_connect_timeout %>
+write-timeout   = <%= @graphite_write_timeout %>
 delay           = <%= @graphite_delay %>
 backoff         = <%= @graphite_backoff %>
 queue-size      = <%= @graphite_queue_size %>
 namespace       = <%= @graphite_namespace %>
-prefix_name     = <%= @graphite_prefix_hostname %>
+prefix-name     = <%= @graphite_prefix_hostname %>
 fqdn            = <%= @graphite_fqdn %>
 
 <%- if @local_store_enabled -%>

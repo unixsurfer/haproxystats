@@ -32,6 +32,9 @@ class haproxystats::params {
   $process_CPUAffinity          = undef
   $process_aggr_server_metrics  = false
   $process_src_dir              = '${paths:base-dir}/incoming'
+  $process_exclude_frontends    = []
+  $process_exclude_backends     = []
+  $process_compute_percentages  = false
   $graphite_server              = hiera('graphite::host')
   $graphite_port                = hiera('graphite::port')
   $graphite_retries             = 2

@@ -71,6 +71,9 @@ class haproxystats (
   $process_loglevel             = $::haproxystats::params::process_loglevel,
   $process_CPUAffinity          = $::haproxystats::params::process_CPUAffinity,
   $process_aggr_server_metrics  = $::haproxystats::params::process_aggr_server_metrics,
+  $process_exclude_frontends    = $::haproxystats::params::process_exclude_frontends,
+  $process_exclude_backends     = $::haproxystats::params::process_exclude_backends,
+  $process_compute_percentages  = $::haproxystats::params::process_compute_percentages,
   $graphite_server              = $::haproxystats::params::graphite_server,
   $graphite_port                = $::haproxystats::params::graphite_port,
   $graphite_retries             = $::haproxystats::params::graphite_retries,
@@ -87,6 +90,12 @@ class haproxystats (
   $local_store_dir              = $::haproxystats::params::local_store_dir,
 ) inherits haproxystats::params {
 
+  validate_array($process_exclude_backends)
+  validate_array($process_exclude_frontends)
+
+  $dotdir = '/etc/haproxystats.d'
+  $exclude_frontends_filename = "${dotdir}/exclude_frontend.conf"
+  $exclude_backends_filename  = "${dotdir}/exclude_backend.conf"
   realize ( Group[$user] )
   User  <| title == "${user}" |> {
     groups  => $groups,
@@ -141,6 +150,35 @@ class haproxystats (
       group  => root,
       mode   => '0755',
       content => template('haproxystats/haproxystats-process-monit-check.sh.erb');
+    $dotdir:
+      ensure  => directory,
+      owner   => root,
+      group   => root,
+      mode    => '0755';
+    $exclude_frontends_filename:
+      ensure   => size($process_exclude_frontends) ? {
+        0       => absent,
+        default => file,
+      },
+      owner    => root,
+      group    => root,
+      mode     => '0444',
+      content  => template('haproxystats/exclude_frontend.conf.erb'),
+      notify  => [
+        Service['haproxystats-process'],
+      ];
+    $exclude_backends_filename:
+      ensure   => size($process_exclude_backends) ? {
+        0       => absent,
+        default => file,
+      },
+      owner    => root,
+      group    => root,
+      mode     => '0444',
+      content  => template('haproxystats/exclude_backend.conf.erb'),
+      notify  => [
+        Service['haproxystats-process'],
+      ];
   }
   concat {
     '/etc/haproxystats.conf':

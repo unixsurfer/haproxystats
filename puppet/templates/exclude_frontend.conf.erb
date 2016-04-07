@@ -1,0 +1,11 @@
+######################################################################
+#                                                                    #
+#       This file is managed by Puppet                               #
+#       any changes made locally will be lost.                       #
+#                                                                    #
+# puppet:///modules/haproxystats/templates/exclude_frontend.conf.erb #
+#                                                                    #
+######################################################################
+<%- @process_exclude_frontends.each do |val| -%>
+<%= val.to_s %>
+<%- end -%>
