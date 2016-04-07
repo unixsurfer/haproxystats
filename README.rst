@@ -136,12 +136,15 @@ Stores statistics in the local disk. Use it only for debugging purposes.
 Queuing system
 ##############
 
-The *incoming* directory together with the inotify API provides a simple queueing
-system which is used as a communication channel between haproxystats-pull
-and haproxystats-process programs. There isn't any feedback mechanism in place,
-thus haproxystats-pull monitors the number of directories before it pulls
-data from HAProxy and suspends its job when the number of directories exceeds
-a threshold.
+The *incoming* directory together with the inotify API provides a simple
+queueing system which is used as a communication channel between
+haproxystats-pull and haproxystats-process programs.
+
+There isn't any feedback mechanism in place, thus haproxystats-pull monitors
+the number of directories before it pulls data from HAProxy and suspends its
+job when the number of directories exceeds a threshold.
+
+See **queue-size** parameter of **pull** section.
 
 Configuration
 -------------
