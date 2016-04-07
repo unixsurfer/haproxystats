@@ -173,6 +173,7 @@ This is an example configuration file (/etc/haproxystats.conf)::
     dst-dir         = ${paths:base-dir}/incoming
     tmp-dst-dir     = ${paths:base-dir}/incoming.tmp
     workers         = 8
+    queue-size      = 360
 
     [process]
     src-dir         = ${paths:base-dir}/incoming
