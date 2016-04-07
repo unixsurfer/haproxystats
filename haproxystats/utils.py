@@ -401,8 +401,8 @@ class EventHandler(pyinotify.ProcessEvent):
     Arguments:
         tasks (queue obj): A queue to put items.
     """
-    def my_init(self, tasks):
-        self.tasks = tasks  # pylint: disable=W0201
+    def my_init(self, tasks):  # pylint: disable=arguments-differ
+        self.tasks = tasks
 
     def _put_item_to_queue(self, pathname):
         """Add item to queue if and only if the pathname is a directory"""
