@@ -284,6 +284,11 @@ Number of threads to use for writing statistics to disk. These are very
 light threads and don't consume a lot of resources. Shouldn't be set higher
 than the number of haproxy processes.
 
+* **queue-size** Defaults to **360**
+
+Suspend the pulling of statistics when the number of directories in **dst-dir**
+exceeds this limit.
+
 process section
 ###############
 
