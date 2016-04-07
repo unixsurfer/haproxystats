@@ -90,8 +90,94 @@ class haproxystats (
   $local_store_dir              = $::haproxystats::params::local_store_dir,
 ) inherits haproxystats::params {
 
+  validate_re($default_loglevel, [
+                                   '^debug$',
+                                   '^info$',
+                                   '^warning$',
+                                   '^error$',
+                                   '^critical$',
+                                 ]
+          )
+  if ! is_numeric($default_timeout) {
+    fail("default_timeout must be a number")
+  }
+  if ! is_numeric($default_retries) {
+    fail("default_retries must be a number")
+  }
+  if ! is_numeric($default_interval) {
+    fail("default_interval must be a number")
+  }
+  validate_re($pull_loglevel, [
+                                '^debug$',
+                                '^info$',
+                                '^warning$',
+                                '^error$',
+                                '^critical$',
+                              ]
+          )
+  if ! is_numeric($pull_timeout) {
+    fail("pull_timeout must be a number")
+  }
+  if ! is_numeric($pull_retries) {
+    fail("pull_retries must be a number")
+  }
+  if ! is_numeric($pull_interval) {
+    fail("pull_interval must be a number")
+  }
+  if ! is_numeric($pull_pull_interval) {
+    fail("pull_pull_interval must be a number")
+  }
+  if ! is_numeric($pull_pull_timeout) {
+    fail("pull_pull_timeout must be a number")
+  }
+  if ! is_numeric($pull_workers) {
+    fail("pull_workers must be a number")
+  }
+  if ! is_numeric($pull_queue_size) {
+    fail("pull_queue_size must be a number")
+  }
+  validate_re($process_loglevel, [
+                                   '^debug$',
+                                   '^info$',
+                                   '^warning$',
+                                   '^error$',
+                                   '^critical$',
+                                 ]
+          )
+  if ! is_numeric($process_workers) {
+    fail("process_workers must be a number")
+  }
+  validate_bool($process_aggr_server_metrics)
+  validate_bool($process_compute_percentages)
   validate_array($process_exclude_backends)
   validate_array($process_exclude_frontends)
+  if ! is_numeric($graphite_port) {
+    fail("graphite_port must be a number")
+  }
+  if ! is_numeric($graphite_retries) {
+    fail("graphite_retries must be a number")
+  }
+  if ! is_numeric($graphite_interval) {
+    fail("graphite_interval must be a number")
+  }
+  if ! is_numeric($graphite_connect_timeout) {
+    fail("graphite_connect_timeout must be a number")
+  }
+  if ! is_numeric($graphite_write_timeout) {
+    fail("graphite_write_timeout must be a number")
+  }
+  if ! is_numeric($graphite_delay) {
+    fail("graphite_delay must be a number")
+  }
+  if ! is_numeric($graphite_backoff) {
+    fail("graphite_backoff must be a number")
+  }
+  if ! is_numeric($graphite_queue_size) {
+    fail("graphite_queue_size must be a number")
+  }
+  validate_bool($graphite_prefix_hostname)
+  validate_bool($graphite_fqdn)
+  validate_bool($local_store_enabled)
 
   $dotdir = '/etc/haproxystats.d'
   $exclude_frontends_filename = "${dotdir}/exclude_frontend.conf"
