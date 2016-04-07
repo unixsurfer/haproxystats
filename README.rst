@@ -180,6 +180,8 @@ This is an example configuration file (/etc/haproxystats.conf)::
     port            = 3002
     retries         = 3
     interval        = 1.8
+    connect-timeout = 1.0
+    write-timeout   = 1.0
     delay           = 10
     backoff         = 2
     namespace       = loadbalancers
@@ -342,6 +344,14 @@ Number of times to reconnect to Graphite after a failure.
 * **interval** Defaults to **1.8** (seconds)
 
 Time to wait before trying to reconnect to Graphite after a failure.
+
+* **connect-timeout** Defaults to **1** (seconds)
+
+Time to wait for establishing a connection to Graphite relay.
+
+* **write-timeout** Defaults to **1** (seconds)
+
+Time to wait on sending data to Graphite relay.
 
 * **delay** Defaults to **10** (seconds)
 
