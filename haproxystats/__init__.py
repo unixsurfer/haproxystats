@@ -49,6 +49,6 @@ DEFAULT_OPTIONS = {
         'namespace': 'loadbalancers',
         'prefix_hostname': 'true',
         'fqdn': 'true',
-        'queue_size': '1000000'
+        'queue-size': '1000000'
     },
 }
