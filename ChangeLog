@@ -1,6 +1,19 @@
 CHANGES
 =======
 
+0.3.2
+-----
+
+* RELEASE 0.3.2 version
+* Make sure we can __init__ method of parent class
+* Remove unnecessary fallback
+* Catch the case where config is in invalid format
+* Perform a sanity check on configuration
+* Disable pylint warning at the correct line
+* Add sanity checks for parameters in puppet module
+* Add queue-size parameter in the example config
+* Update puppet module
+
 0.3.1
 -----
 
