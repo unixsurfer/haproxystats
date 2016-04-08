@@ -72,6 +72,8 @@ class BrokenConnection(Exception):
     def __init__(self, raised):
         self.raised = raised
 
+        super().__init__()
+
 
 def load_file_content(filename):
     """Build list from the content of a file
