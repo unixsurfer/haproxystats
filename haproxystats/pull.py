@@ -329,7 +329,10 @@ def main():
     config.read_dict(copy.copy(DEFAULT_OPTIONS))
     # Load configuration from a file. NOTE: ConfigParser doesn't warn if user
     # sets a filename which doesn't exist, in this case defaults will be used.
-    config.read(args['--file'])
+    try:
+        config.read(args['--file'])
+    except ParsingError as exc:
+        sys.exit(str(exc))
 
     if args['--print']:
         for section in sorted(DEFAULT_OPTIONS):

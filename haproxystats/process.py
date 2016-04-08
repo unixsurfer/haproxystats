@@ -483,7 +483,12 @@ def main():
     config = ConfigParser(interpolation=ExtendedInterpolation())
     # Set defaults for all sections
     config.read_dict(copy.copy(DEFAULT_OPTIONS))
-    config.read(args['--file'])
+    try:
+        config.read(args['--file'])
+    except ParsingError as exc:
+        sys.exit(str(exc))
+
+    incoming_dir = config.get('process', 'src-dir')
 
     if args['--print']:
         for section in sorted(DEFAULT_OPTIONS):
