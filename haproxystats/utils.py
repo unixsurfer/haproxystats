@@ -13,6 +13,7 @@ import socket
 import shutil
 import logging
 import time
+import configparser
 import glob
 import re
 import pyinotify
@@ -25,6 +26,46 @@ FILE_SUFFIX_INFO = '_info'
 FILE_SUFFIX_STAT = '_stat'
 CMD_SUFFIX_MAP = {'info': FILE_SUFFIX_INFO, 'stat': FILE_SUFFIX_STAT}
 
+OPTIONS_TYPE = {
+    'paths': {
+        'base-dir': 'get',
+    },
+    'pull': {
+        'loglevel': 'get',
+        'socket-dir': 'get',
+        'retries': 'getint',
+        'timeout': 'getfloat',
+        'interval': 'getfloat',
+        'pull-timeout': 'getfloat',
+        'pull-interval': 'getint',
+        'dst-dir': 'get',
+        'tmp-dst-dir': 'get',
+        'workers': 'getint',
+        'queue-size': 'getint',
+    },
+    'process': {
+        'workers': 'getint',
+        'src-dir': 'get',
+        'aggr-server-metrics': 'getboolean',
+    },
+    'graphite': {
+        'server': 'get',
+        'port': 'getint',
+        'retries': 'getint',
+        'interval': 'getfloat',
+        'connect-timeout': 'getfloat',
+        'write-timeout': 'getfloat',
+        'delay': 'getfloat',
+        'backoff': 'getfloat',
+        'namespace': 'get',
+        'prefix-hostname': 'getboolean',
+        'fqdn': 'getboolean',
+        'queue-size': 'getint',
+    },
+    'local-store': {
+        'dir': 'get',
+    },
+}
 
 class BrokenConnection(Exception):
     """A wrapper of all possible exception during a TCP connect"""
@@ -421,3 +462,67 @@ class EventHandler(pyinotify.ProcessEvent):
         "Invoked when a directory/file is moved"
         log.debug('received an event for MOVE')
         self._put_item_to_queue(event.pathname)
+
+def configuration_check(config, section):
+    """
+    Performs a sanity check on configuration
+
+    Arguments:
+        config (obg): A configparser object which holds our configuration.
+        section (str): Section name
+
+    Raises:
+        ValueError on the first occureance of invalid configuration
+
+    Returns:
+        None if all checks are successful.
+    """
+    loglevel = config[section]['loglevel']
+    num_level = getattr(logging, loglevel.upper(), None)
+    if not isinstance(num_level, int):
+        raise ValueError("invalid configuration, section:'{s}' option:'{o}' "
+                         "error: invalid loglevel '{l}'".format(s=section,
+                                                                o='loglevel',
+                                                                l=loglevel))
+
+    for option, getter in OPTIONS_TYPE[section].items():
+        try:
+            getattr(config, getter)(section, option)
+        except (configparser.Error, ValueError) as exc:
+            # For some errors ConfigParser mention section/option names and
+            # for others not. We want for all possible errors to mention
+            # section andoption names in order to make the life of our user
+            # easier.
+            if 'section' not in str(exc):
+                raise ValueError("invalid configuration, section:'{s}' "
+                                 "option:'{p}' error:{e}".format(s=section,
+                                                                 p=option,
+                                                                 e=str(exc)))
+            else:
+                raise ValueError("invalid configuration, error:{e}".format(
+                    e=str(exc)))
+
+def read_write_access(directory):
+    """
+    Checks if read/write access is granted on a directory
+
+    Arguments:
+        directory (str): Directory name
+
+    Raises:
+        OSError if either read or write access isn't granted
+
+    Returns:
+        None if read/write access is granted
+    """
+    check_file = os.path.join(directory, '.read_write_check')
+    try:
+        with open(check_file, 'w') as _file:
+            _file.write('')
+    except OSError as exc:
+        raise ValueError("invalid configuration, read and write access is not "
+                         "granted for '{d}' directory, error:{e}".format(
+                             d=directory,
+                             e=str(exc)))
+    else:
+        os.remove(check_file)

@@ -27,7 +27,7 @@ import shutil
 import socket
 import fileinput
 from collections import defaultdict
-from configparser import ConfigParser, ExtendedInterpolation
+from configparser import ConfigParser, ExtendedInterpolation, ParsingError
 from docopt import docopt
 import pyinotify
 import pandas
@@ -37,7 +37,8 @@ from haproxystats import DEFAULT_OPTIONS
 from haproxystats.utils import (dispatcher, GraphiteHandler, get_files,
                                 FileHandler, EventHandler, concat_csv,
                                 FILE_SUFFIX_INFO, FILE_SUFFIX_STAT,
-                                load_file_content)
+                                load_file_content, configuration_check,
+                                read_write_access)
 from haproxystats.metrics import (DAEMON_AVG_METRICS, DAEMON_METRICS,
                                   SERVER_AVG_METRICS, SERVER_METRICS,
                                   BACKEND_AVG_METRICS, BACKEND_METRICS,
@@ -502,6 +503,14 @@ def main():
                 print("{k} = {v}".format(k=key, v=value))
             print()
         sys.exit(0)
+
+    try:
+        configuration_check(config, 'paths')
+        configuration_check(config, 'process')
+        configuration_check(config, 'graphite')
+        read_write_access(config.get('process', 'src-dir'))
+    except ValueError as exc:
+        sys.exit(str(exc))
 
     tasks = multiprocessing.Queue()
     handler = EventHandler(tasks=tasks)

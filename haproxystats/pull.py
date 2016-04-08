@@ -27,14 +27,15 @@ import signal
 import shutil
 import logging
 from functools import partial
-from configparser import ConfigParser, ExtendedInterpolation
+from configparser import ConfigParser, ExtendedInterpolation, ParsingError
 import copy
 import glob
 from docopt import docopt
 
 from haproxystats import __version__ as VERSION
 from haproxystats import DEFAULT_OPTIONS
-from haproxystats.utils import (is_unix_socket, CMD_SUFFIX_MAP)
+from haproxystats.utils import (is_unix_socket, CMD_SUFFIX_MAP,
+                                configuration_check, read_write_access)
 
 LOG_FORMAT = ('%(asctime)s [%(process)d] [%(threadName)-10s:%(funcName)s] '
               '%(levelname)-8s %(message)s')
@@ -347,8 +348,17 @@ def main():
                 print()
         sys.exit(0)
 
-    log.setLevel(getattr(logging, config.get('pull', 'loglevel').upper(),
-                         None))
+    try:
+        configuration_check(config, 'pull')
+        read_write_access(config.get('pull', 'dst-dir'))
+        read_write_access(config.get('pull', 'tmp-dst-dir'))
+    except ValueError as exc:
+        sys.exit(str(exc))
+
+    loglevel =\
+        config.get('pull', 'loglevel').upper()  # pylint: disable=no-member
+    log.setLevel(getattr(logging, loglevel, None))
+
     log.info('haproxystats-pull %s version started', VERSION)
     # Setup our event loop
     loop = asyncio.get_event_loop()
