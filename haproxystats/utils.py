@@ -47,6 +47,7 @@ OPTIONS_TYPE = {
         'workers': 'getint',
         'src-dir': 'get',
         'aggr-server-metrics': 'getboolean',
+        'per-process-metrics': 'getboolean',
     },
     'graphite': {
         'server': 'get',

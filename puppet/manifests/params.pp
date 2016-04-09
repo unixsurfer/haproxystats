@@ -31,6 +31,7 @@ class haproxystats::params {
   $process_loglevel             = $default_loglevel
   $process_CPUAffinity          = undef
   $process_aggr_server_metrics  = false
+  $process_per_process_metrics  = false
   $process_src_dir              = '${paths:base-dir}/incoming'
   $process_exclude_frontends    = []
   $process_exclude_backends     = []

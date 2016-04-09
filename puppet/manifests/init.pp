@@ -71,6 +71,7 @@ class haproxystats (
   $process_loglevel             = $::haproxystats::params::process_loglevel,
   $process_CPUAffinity          = $::haproxystats::params::process_CPUAffinity,
   $process_aggr_server_metrics  = $::haproxystats::params::process_aggr_server_metrics,
+  $process_per_process_metrics  = $::haproxystats::params::process_per_process_metrics,
   $process_exclude_frontends    = $::haproxystats::params::process_exclude_frontends,
   $process_exclude_backends     = $::haproxystats::params::process_exclude_backends,
   $process_compute_percentages  = $::haproxystats::params::process_compute_percentages,

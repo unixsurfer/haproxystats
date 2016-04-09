@@ -234,6 +234,22 @@ class Consumer(multiprocessing.Process):
                     value=values[1],
                     time=self.epoch)
                 dispatcher.signal('send', data=data)
+
+            if self.config.getboolean('process', 'per-process-metrics'):
+                log.info("processing statistics per daemon")
+                indexed_by_worker = dataframe.set_index('Process_num')
+                metrics_per_worker = indexed_by_worker.loc[:, DAEMON_METRICS]
+                for worker, row in metrics_per_worker.iterrows():
+                    for values in row[1:].iteritems():
+                        data = ("{path}.daemon.process.{worker}.{metric} "
+                                "{value} {time}\n").format(
+                                    path=self.graphite_path,
+                                    worker=worker,
+                                    metric=values[0].replace('.', '_'),
+                                    value=values[1],
+                                    time=self.epoch)
+                        dispatcher.signal('send', data=data)
+
             log.info('finished processing statistics for HAProxy daemon')
 
     def sites_stats(self, files):

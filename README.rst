@@ -177,8 +177,9 @@ This is an example configuration file (/etc/haproxystats.conf)::
     queue-size      = 360
 
     [process]
-    src-dir         = ${paths:base-dir}/incoming
-    workers         = 4
+    src-dir             = ${paths:base-dir}/incoming
+    workers             = 4
+    per-process-metrics = false
 
     [graphite]
     server          = 127.0.0.1
@@ -333,6 +334,26 @@ skipped.
 
 A file which contains one backend name per line for which processing is
 skipped.
+
+* **per-process-metrics** Defaults to **false**
+
+HAProxy daemon provides statistics and by default **haproxystat-process**
+aggregates those statistics when HAProxy runs in multiprocess mode
+(nbproc > 1).
+
+Set this to **true** to get those statistics also per process as well.
+This is quite useful for monitoring purposes where someone wants to monitor
+sessions per process in order to see if traffic is evenly distributed to all
+processes by the kernel.
+
+It is also useful in setups where configuration for frontends and backends is
+unevenly spread across all processes, for instance processes 1-4 manage SSL
+frontends and processes 5-7 manage noSSL frontends.
+
+This adds another path in Graphite under haproxy space::
+
+    loadbalancers.lb-01.haproxy.daemon.process.<process_num>.<metric>
+
 
 graphite section
 ################

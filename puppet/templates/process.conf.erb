@@ -11,6 +11,7 @@ loglevel    = <%= @process_loglevel %>
 workers     = <%= _workers %>
 src-dir     = <%= @process_src_dir %>
 aggr-server-metrics = <%= @process_aggr_server_metrics %>
+per-process-metrics = <%= @process_per_process_metrics %>
 <%- if @process_exclude_frontends.size > 0 -%>
 exclude-frontends   = <%= @exclude_frontends_filename %>
 <%- end -%>
