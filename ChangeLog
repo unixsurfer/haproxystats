@@ -1,6 +1,14 @@
 CHANGES
 =======
 
+0.3.3
+-----
+
+* RELEASE 0.3.3 version
+* Add a tcp_server which simulates graphite-relay
+* Add support for per process statistics
+* Make it more clear that we perform aggregation
+
 0.3.2
 -----
 
