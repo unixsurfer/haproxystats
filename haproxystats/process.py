@@ -38,7 +38,7 @@ from haproxystats.utils import (dispatcher, GraphiteHandler, get_files,
                                 FileHandler, EventHandler, concat_csv,
                                 FILE_SUFFIX_INFO, FILE_SUFFIX_STAT,
                                 load_file_content, configuration_check,
-                                read_write_access)
+                                read_write_access, check_metrics)
 from haproxystats.metrics import (DAEMON_AVG_METRICS, DAEMON_METRICS,
                                   SERVER_AVG_METRICS, SERVER_METRICS,
                                   BACKEND_AVG_METRICS, BACKEND_METRICS,
@@ -530,6 +530,7 @@ def main():
         configuration_check(config, 'process')
         configuration_check(config, 'graphite')
         read_write_access(config.get('process', 'src-dir'))
+        check_metrics(config)
     except ValueError as exc:
         sys.exit(str(exc))
 

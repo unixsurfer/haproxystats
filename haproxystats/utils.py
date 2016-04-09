@@ -19,6 +19,8 @@ import re
 import pyinotify
 import pandas
 
+from haproxystats.metrics import (BACKEND_METRICS, FRONTEND_METRICS,
+                                  SERVER_METRICS)
 
 log = logging.getLogger('root')  # pylint: disable=I0011,C0103
 
@@ -504,6 +506,35 @@ def configuration_check(config, section):
             else:
                 raise ValueError("invalid configuration, error:{e}".format(
                     e=str(exc)))
+
+def check_metrics(config):
+    """
+    Checks if metrcis set by user are valid
+
+    Arguments:
+        config (obg): A configparser object which holds our configuration.
+
+    Raises:
+        ValueError when metrics are not valid
+
+    Returns:
+        None if all checks are successful.
+    """
+    for metric_type in ['server', 'frontend', 'backend']:
+        option = '{t}-metrics'.format(t=metric_type)
+        user_metrics = config.get('process', option, fallback=None)
+        if user_metrics is not None:
+            metrics = set(user_metrics.split(' '))
+            if not metrics:
+                break
+            valid_metrics =\
+                globals().get('{}_METRICS'.format(metric_type.upper()))
+            if not set(valid_metrics).issuperset(metrics):
+                raise ValueError("invalid configuration, section:'{s}' "
+                                 "option:'{p}' error:'{e}'".format(
+                                     s='process',
+                                     p=option,
+                                     e='invalid list of metrics'))
 
 def read_write_access(directory):
     """

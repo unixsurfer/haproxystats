@@ -1,1 +1,0 @@
-* Cross check list metrics
