@@ -16,7 +16,7 @@ processes various statistics and pushes them to graphing systems (Graphite).
 It is designed to satisfy the following requirements:
 
 #. Fast and configurable processing of HAProxy statistics
-#. Support of multiprocess mode of HAProxy (nbproc > 1)
+#. Perform aggregation when HAProxy runs in multiprocess (nbproc > 1)
 #. Pull statistics at very low intervals (10secs)
 #. Flexible dispatching of statistics to different systems (Graphite,  kafka)
 
@@ -24,11 +24,12 @@ The main design characteristic is the split between pulling the statistics and
 processing them. This provides the ability to pull data as frequently
 as possible without worrying about the impact on processing time. It also
 reduces the risk of losing data in case of trouble during the processing phase.
+
 It runs locally on each load balancer node, offering a decentralized setup for
 the processing phase, but it can be easily extended in the future to have a
 centralized setup for the processing phase. In that centralized setup it will
-be possible to perform aggregation as well. Until then users can deploy
-`carbon-c-relay`_ for aggregation.
+be possible to perform aggregation on a cluster level as well.
+Until then users can deploy `carbon-c-relay`_ for aggregation.
 
 Because of this design haproxystats comes with two programs:
 **haproxystats-pull** and **haproxystats-process**. The former pulls
