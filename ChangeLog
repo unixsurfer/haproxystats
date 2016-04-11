@@ -1,6 +1,15 @@
 CHANGES
 =======
 
+0.3.4
+-----
+
+* RELEASE 0.3.4 version
+* Add items in TODO
+* Add home-page in setup.cfg
+* Make sure configuration has valid metric names
+* Remove done tasks from TODO
+
 0.3.3
 -----
 
