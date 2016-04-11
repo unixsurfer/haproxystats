@@ -563,6 +563,10 @@ feedback. Please post your comments, bug reports and wishes on my `issues page
 Installation
 ------------
 
+Use pip::
+
+    pip install haproxystats
+
 From Source::
 
    sudo python setup.py install
