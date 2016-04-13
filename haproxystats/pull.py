@@ -37,7 +37,7 @@ from docopt import docopt
 from haproxystats import __version__ as VERSION
 from haproxystats import DEFAULT_OPTIONS
 from haproxystats.utils import (is_unix_socket, CMD_SUFFIX_MAP,
-                                configuration_check, read_write_access)
+                                configuration_check)
 
 LOG_FORMAT = ('%(asctime)s [%(process)d] [%(threadName)-10s:%(funcName)s] '
               '%(levelname)-8s %(message)s')
@@ -355,8 +355,6 @@ def main():
 
     try:
         configuration_check(config, 'pull')
-        read_write_access(config.get('pull', 'dst-dir'))
-        read_write_access(config.get('pull', 'tmp-dst-dir'))
     except ValueError as exc:
         sys.exit(str(exc))
 
