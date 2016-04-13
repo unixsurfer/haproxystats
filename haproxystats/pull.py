@@ -3,6 +3,8 @@
 # vim:fenc=utf-8
 # pylint: disable=no-member
 # pylint: disable=too-many-statements
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-branches
 # pylint: disable=too-many-locals
 #
 """Pulls statistics from HAProxy daemon over UNIX socket(s)

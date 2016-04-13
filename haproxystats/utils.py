@@ -1,3 +1,5 @@
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
 """
 haproxstats.utils
 ~~~~~~~~~~~~~~~~~~
