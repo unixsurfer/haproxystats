@@ -18,7 +18,7 @@ exclude-frontends   = <%= @exclude_frontends_filename %>
 <%- if @process_exclude_backends.size > 0 -%>
 exclude-backends    = <%= @exclude_backends_filename %>
 <%- end -%>
-compute-percegates  = <%= @process_compute_percentages %>
+calculate-percentages  = <%= @process_calculate_percentages %>
 
 [graphite]
 server          = <%= @graphite_server %>
