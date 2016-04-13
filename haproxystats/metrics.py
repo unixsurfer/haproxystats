@@ -15,7 +15,7 @@ DAEMON_METRICS = [
     'CumSslConns',
     'CurrConns',
     'CurrSslConns',
-    'Hard_maxcon',
+    'Hard_maxconn',
     'MaxConnRate',
     'MaxSessRate',
     'MaxSslConns',
