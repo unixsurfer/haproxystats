@@ -38,7 +38,10 @@ from haproxystats.utils import (dispatcher, GraphiteHandler, get_files,
                                 FileHandler, EventHandler, concat_csv,
                                 FILE_SUFFIX_INFO, FILE_SUFFIX_STAT,
                                 load_file_content, configuration_check,
-                                read_write_access, check_metrics)
+                                read_write_access, check_metrics,
+                                daemon_percentage_metrics,
+                                calculate_percentage_per_column,
+                                calculate_percentage_per_row)
 from haproxystats.metrics import (DAEMON_AVG_METRICS, DAEMON_METRICS,
                                   SERVER_AVG_METRICS, SERVER_METRICS,
                                   BACKEND_AVG_METRICS, BACKEND_METRICS,
@@ -235,6 +238,17 @@ class Consumer(multiprocessing.Process):
                     time=self.epoch)
                 dispatcher.signal('send', data=data)
 
+            if self.config.getboolean('process', 'calculate-percentages'):
+                for metric in daemon_percentage_metrics():
+                    log.info('calculating percentage for %s', metric.name)
+                    value = calculate_percentage_per_column(dataframe, metric)
+                    data = "{path}.daemon.{metric} {value} {time}\n".format(
+                        path=self.graphite_path,
+                        metric=metric.title.replace('.', '_'),
+                        value=value,
+                        time=self.epoch)
+                    dispatcher.signal('send', data=data)
+
             if self.config.getboolean('process', 'per-process-metrics'):
                 log.info("processing statistics per daemon")
                 indexed_by_worker = dataframe.set_index('Process_num')
@@ -249,6 +263,28 @@ class Consumer(multiprocessing.Process):
                                     value=values[1],
                                     time=self.epoch)
                         dispatcher.signal('send', data=data)
+
+                if self.config.getboolean('process', 'calculate-percentages'):
+                    for metric in daemon_percentage_metrics():
+                        log.info('calculating percentage for %s per daemon',
+                                 metric.name)
+                        _percentages =\
+                            metrics_per_worker.loc[:, [
+                                metric.limit,
+                                metric.name]].apply(
+                                    calculate_percentage_per_row,
+                                    axis=1,
+                                    args=(metric,))
+                        for worker, row in _percentages.iterrows():
+                            for values in row.iteritems():
+                                data = ("{path}.daemon.process.{worker}."
+                                        "{metric} {value} {time}\n").format(
+                                            path=self.graphite_path,
+                                            worker=worker,
+                                            metric=values[0].replace('.', '_'),
+                                            value=values[1],
+                                            time=self.epoch)
+                                dispatcher.signal('send', data=data)
 
             log.info('finished processing statistics for HAProxy daemon')
 

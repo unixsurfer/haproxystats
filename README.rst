@@ -354,6 +354,18 @@ This adds another path in Graphite under haproxy space::
 
     loadbalancers.lb-01.haproxy.daemon.process.<process_num>.<metric>
 
+* **calculate-percentages** Defaults to **false**
+
+Calculates percentages for a selection of metrics for HAProxy daemon. When
+**per-process-metrics** is set to **true** the calculation happens also per
+HAProxy process. This adds the following metric names::
+
+    ConnPercentage
+    ConnRatePercentage
+    SslRatePercentage
+
+Those metrics can be used for alerting when the current usage on connections
+is very close the configured limit.
 
 graphite section
 ################

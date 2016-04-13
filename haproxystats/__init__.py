@@ -37,6 +37,7 @@ DEFAULT_OPTIONS = {
         'src-dir': '/var/lib/haproxystats/incoming',
         'aggr-server-metrics': 'false',
         'per-process-metrics': 'false',
+        'calculate-percentages': 'false',
     },
     'graphite': {
         'server': '127.0.0.1',

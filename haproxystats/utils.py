@@ -19,8 +19,7 @@ import re
 import pyinotify
 import pandas
 
-from haproxystats.metrics import (BACKEND_METRICS, FRONTEND_METRICS,
-                                  SERVER_METRICS)
+from haproxystats.metrics import MetricNamesPercentage
 
 log = logging.getLogger('root')  # pylint: disable=I0011,C0103
 
@@ -50,6 +49,7 @@ OPTIONS_TYPE = {
         'src-dir': 'get',
         'aggr-server-metrics': 'getboolean',
         'per-process-metrics': 'getboolean',
+        'calculate-percentages': 'getboolean',
     },
     'graphite': {
         'server': 'get',
@@ -69,6 +69,7 @@ OPTIONS_TYPE = {
         'dir': 'get',
     },
 }
+
 
 class BrokenConnection(Exception):
     """A wrapper of all possible exception during a TCP connect"""
@@ -468,6 +469,7 @@ class EventHandler(pyinotify.ProcessEvent):
         log.debug('received an event for MOVE')
         self._put_item_to_queue(event.pathname)
 
+
 def configuration_check(config, section):
     """
     Performs a sanity check on configuration
@@ -507,6 +509,7 @@ def configuration_check(config, section):
                 raise ValueError("invalid configuration, error:{e}".format(
                     e=str(exc)))
 
+
 def check_metrics(config):
     """
     Checks if metrcis set by user are valid
@@ -536,6 +539,7 @@ def check_metrics(config):
                                      p=option,
                                      e='invalid list of metrics'))
 
+
 def read_write_access(directory):
     """
     Checks if read/write access is granted on a directory
@@ -560,3 +564,104 @@ def read_write_access(directory):
                              e=str(exc)))
     else:
         os.remove(check_file)
+
+
+def daemon_percentage_metrics():
+    """
+    Builds a list of namedtuples which holds metric names for HAProxy
+    daemon for which we calculate a percentage.
+    """
+    _list = []
+    _list.append(MetricNamesPercentage(name='CurrConns',
+                                       limit='Maxconn',
+                                       title='ConnPercentage'))
+    _list.append(MetricNamesPercentage(name='ConnRate',
+                                       limit='ConnRateLimit',
+                                       title='ConnRatePercentage'))
+    _list.append(MetricNamesPercentage(name='SslRate',
+                                       limit='SslRateLimit',
+                                       title='SslRatePercentage'))
+
+    return _list
+
+
+def calculate_percentage_per_row(row, metric):
+    """
+    Calculate the percentage per row for 2 columns
+
+    It selects per row 2 columns, metric.name and metric.limit, out of the
+    dataframe and then calculate the percentage.
+
+    Example where metric.name is 'CurrConns' and metric.limit is 'MaxConn'.
+    +-------------+---------+-----------+
+    |             | MaxConn | CurrConns |
+    +-------------+---------+-----------+
+    | Process_num |         |           |
+    | 0           | 300     | 13        |
+    | 1           | 300     | 15        |
+    | 2           | 300     | 11        |
+    +-------------+---------+-----------+
+
+    It returns a Pandas Series with a column name where name is metric.title
+    +-------------+---------+-----------+----------------+
+    |             | MaxConn | CurrConns | ConnPercentage |
+    +-------------+---------+-----------+----------------+
+    | Process_num |         |           |                |
+    | 0           | 100     | 13        | 13             |
+    | 1           | 100     | 15        | 15             |
+    | 2           | 100     | 11        | 11             |
+    +-------------+---------+-----------+----------------+
+
+    Arguments:
+
+        dataframe (obj): Pandas dataframe with statistics for HAProxy workers
+        metric (tuple): A namedtuple of MetricNamesPercentage
+
+    Returns:
+        A Pandas Series with percentage as integer
+
+    """
+    if row[metric.limit] == 0:
+        return pandas.Series({metric.title: 0})
+
+    return pandas.Series(
+        {
+            metric.title: (
+                100*row[metric.name] / row[metric.limit]).astype('int')
+        }
+    )
+
+
+def calculate_percentage_per_column(dataframe, metric):
+    """
+    Calculate the percentage against 2 Pandas Series
+
+    It selects 2 columns, metric.name and metric.limit, out of the dataframe,
+    sums the values per column and then calculate the percentage.
+
+    Example where metric.name is 'CurrConns' and metric.limit is 'MaxConn'.
+    It calculates the sum per column and the retuns the percentage of CurrConns
+    as part of Maxconn.
+    +---+---------+-----------+
+    |   | MaxConn | CurrConns |
+    +---+---------+-----------+
+    | 0 | 300     | 13        |
+    | 1 | 300     | 15        |
+    | 2 | 300     | 11        |
+    +---+---------+-----------+
+
+    Arguments:
+
+        dataframe (obj): Pandas dataframe with statistics for HAProxy workers
+        metric (tuple): A namedtuple of MetricNamesPercentage
+
+
+    Returns:
+        A percentage as integer
+    """
+    _sum = dataframe.loc[:, [metric.name]].sum()[0]
+    _sum_limit = dataframe.loc[:, [metric.limit]].sum()[0]
+    if _sum_limit == 0:
+        return 0
+    else:
+        return int(100 * _sum / _sum_limit)

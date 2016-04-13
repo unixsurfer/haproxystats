@@ -4,6 +4,8 @@ haproxstats.metrics
 
 This module provides the field names contained in the HAProxy statistics.
 """
+from collections import namedtuple
+
 DAEMON_METRICS = [
     'CompressBpsIn',
     'CompressBpsOut',
@@ -122,3 +124,6 @@ FRONTEND_METRICS = [
     'req_tot',
     'slim'
 ] + COMMON
+
+MetricNamesPercentage = namedtuple('MetricsNamesPercentage',
+                                   ['name', 'limit', 'title'])
