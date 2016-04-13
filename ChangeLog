@@ -1,6 +1,17 @@
 CHANGES
 =======
 
+0.3.5
+-----
+
+* RELEASE 0.3.5 version
+* Remove check for accessibility for dst-dir and tmp-dst-dir
+* Disable some pylint checks
+* Calculate percentages for HAProxy workers
+* Use correct name
+* Add a missing comma
+* Update installation instructions
+
 0.3.4
 -----
 
