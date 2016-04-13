@@ -9,7 +9,7 @@ DAEMON_METRICS = [
     'CompressBpsOut',
     'CompressBpsRateLim',
     'ConnRate',
-    'ConnRateLimit'
+    'ConnRateLimit',
     'CumConns',
     'CumReq',
     'CumSslConns',
