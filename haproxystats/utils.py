@@ -581,6 +581,9 @@ def daemon_percentage_metrics():
     _list.append(MetricNamesPercentage(name='ConnRate',
                                        limit='ConnRateLimit',
                                        title='ConnRatePercentage'))
+    _list.append(MetricNamesPercentage(name='CurrSslConns',
+                                       limit='MaxSslConns',
+                                       title='SslConnPercentage'))
     _list.append(MetricNamesPercentage(name='SslRate',
                                        limit='SslRateLimit',
                                        title='SslRatePercentage'))
