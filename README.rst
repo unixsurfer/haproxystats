@@ -377,6 +377,7 @@ HAProxy process. This adds the following metric names::
     ConnPercentage
     ConnRatePercentage
     SslRatePercentage
+    SslConnPercentage
 
 Those metrics can be used for alerting when the current usage on connections
 is very close the configured limit.
