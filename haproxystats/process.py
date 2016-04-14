@@ -39,7 +39,7 @@ from haproxystats.utils import (dispatcher, GraphiteHandler, get_files,
                                 FILE_SUFFIX_INFO, FILE_SUFFIX_STAT,
                                 load_file_content, configuration_check,
                                 read_write_access, check_metrics,
-                                daemon_percentage_metrics,
+                                daemon_percentage_metrics, send_wlc,
                                 calculate_percentage_per_column,
                                 calculate_percentage_per_row)
 from haproxystats.metrics import (DAEMON_AVG_METRICS, DAEMON_METRICS,
@@ -159,13 +159,20 @@ class Consumer(multiprocessing.Process):
                                  'directory or something/someone removed the '
                                  'directory!', incoming_dir, exc)
                 elapsed_time = time.time() - start_time
-                log.info('wall clock time in seconds: %.3f', elapsed_time)
+                log.info('total wall clock time in seconds %.3f', elapsed_time)
+                data = "{path}.haproxystats.{metric} {value} {time}\n".format(
+                    path=self.graphite_path,
+                    metric='TotalWallClockTime',
+                    value="{t:.3f}".format(t=elapsed_time),
+                    time=self.epoch)
+                dispatcher.signal('send', data=data)
                 log.info('finished with %s', incoming_dir)
         except KeyboardInterrupt:
             log.critical('Ctrl-C received')
 
         return
 
+    @send_wlc(output=dispatcher, name='AllStats')
     def process_stats(self, pathname):
         """Process all statistics.
 
@@ -182,14 +189,15 @@ class Consumer(multiprocessing.Process):
                         "daemon statistics", pathname)
         else:
             self.haproxy_stats(files)
-
         files = get_files(pathname, FILE_SUFFIX_STAT)
+
         if not files:
             log.warning("%s directory doesn't contain any files with HAProxy "
                         "statistics for sites", pathname)
         else:
             self.sites_stats(files)
 
+    @send_wlc(output=dispatcher, name='HAProxy')
     def haproxy_stats(self, files):
         """Process statistics for HAProxy daemon.
 
@@ -285,7 +293,6 @@ class Consumer(multiprocessing.Process):
                                             value=values[1],
                                             time=self.epoch)
                                 dispatcher.signal('send', data=data)
-
             log.info('finished processing statistics for HAProxy daemon')
 
     def sites_stats(self, files):
@@ -343,6 +350,7 @@ class Consumer(multiprocessing.Process):
         else:
             log.error('failed to process statistics for sites')
 
+    @send_wlc(output=dispatcher, name='Frontends')
     def process_frontends(self, data_frame):
         """Process statistics for frontends.
 
@@ -390,6 +398,7 @@ class Consumer(multiprocessing.Process):
 
         log.debug('finished processing statistics for frontends')
 
+    @send_wlc(output=dispatcher, name='Backends')
     def process_backends(self, data_frame, *, filter_backend=None):
         """Process statistics for backends.
 
@@ -443,6 +452,7 @@ class Consumer(multiprocessing.Process):
 
         log.debug('finished processing statistics for backends')
 
+    @send_wlc(output=dispatcher, name='Servers')
     def process_servers(self, data_frame, *, filter_backend=None):
         """Process statistics for servers.
 

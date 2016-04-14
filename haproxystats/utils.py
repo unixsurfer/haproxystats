@@ -10,6 +10,7 @@ haproxystats.
 import os
 import stat
 from collections import defaultdict, deque
+from functools import wraps
 import io
 import socket
 import shutil
@@ -667,3 +668,46 @@ def calculate_percentage_per_column(dataframe, metric):
         return 0
     else:
         return int(100 * _sum / _sum_limit)
+
+
+def send_wlc(output, name):
+    """
+    A decorator to send to graphite the wall clock time of a function/method
+
+    The decorated method must have the following attributes:
+        graphite_path (str): The graphite path to use for storing the metric
+        epoch (int): Time to credit the wallclock time
+
+    Arguments:
+        output (obj): A dispatcher object which has send method registered
+    """
+    def decorated(func):
+        """
+        The real decorator.
+
+        Arguments:
+            func (obj): A function to decorate
+        """
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            """
+            Time the execution of decorated function
+            """
+            start_time = time.time()
+            result = func(self, *args, **kwargs)
+            elapsed_time = '{t:.3f}'.format(t=time.time() - start_time)
+            data = "{path}.haproxystats.{metric} {value} {time}\n".format(
+                path=getattr(self, 'graphite_path'),
+                metric='WallClockTime'+ name,
+                value=elapsed_time,
+                time=getattr(self, 'epoch'))
+            log.info("wall clock time in seconds for %s %s",
+                     func.__name__,
+                     elapsed_time)
+            output.signal('send', data=data)
+
+            return result
+
+        return wrapper
+
+    return decorated

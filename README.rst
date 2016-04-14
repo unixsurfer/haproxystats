@@ -129,6 +129,7 @@ An example of graphite namespace::
     <loadbalancers>.<lb-01>.haproxy.backend.<backendname>.server.<servername>
     <loadbalancers>.<lb-01>.haproxy.server.<servername>.
     <loadbalancers>.<lb-01>.haproxy.daemon.
+    <loadbalancers>.<lb-01>.haproxy.haproxystats.<metric names>.
 
 2. **local-store**
 
@@ -146,6 +147,19 @@ the number of directories before it pulls data from HAProxy and suspends its
 job when the number of directories exceeds a threshold.
 
 See **queue-size** parameter of **pull** section.
+
+Statistics for haproxystats
+###########################
+
+**haproxystats** provides statistics for the time it takes to process,
+calculate and produce HAProxy metrics. By default provides the following list
+of metric names with values in seconds::
+
+    loadbalancers.<lb-01>.haproxy.haproxystats.WallClockTimeHAProxy
+    loadbalancers.<lb-01>.haproxy.haproxystats.WallClockTimeFrontends
+    loadbalancers.<lb-01>.haproxy.haproxystats.WallClockTimeBackends
+    loadbalancers.<lb-01>.haproxy.haproxystats.WallClockTimeServers
+    loadbalancers.<lb-01>.haproxy.haproxystats.WallClockTimeAllStats
 
 Configuration
 -------------
