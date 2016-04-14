@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.3.6
+-----
+
+* RELEASE 0.3.6 version
+* Produce statistics for haproxystats-process
+* Fix a typo for option name in the puppet module
+
 0.3.5
 -----
 
