@@ -75,7 +75,9 @@ OPTIONS_TYPE = {
 
 
 class BrokenConnection(Exception):
-    """A wrapper of all possible exception during a TCP connect"""
+    """
+    A wrapper of all possible exception during a TCP connect
+    """
     def __init__(self, raised):
         self.raised = raised
 
@@ -83,7 +85,8 @@ class BrokenConnection(Exception):
 
 
 def load_file_content(filename):
-    """Build list from the content of a file
+    """
+    Build list from the content of a file
 
     Arguments:
         filename (str): A absolute path of a filename
@@ -104,7 +107,8 @@ def load_file_content(filename):
 
 
 def is_unix_socket(path):
-    """Check if path is a valid UNIX socket.
+    """
+    Check if path is a valid UNIX socket.
 
     Arguments:
         path (str): A file name path
@@ -118,7 +122,8 @@ def is_unix_socket(path):
 
 
 def concat_csv(csv_files):
-    """Performs a concatenation along several csv files.
+    """
+    Perform a concatenation along several csv files.
 
     Arguments:
         csv_files (lst): A list of csv files.
@@ -141,7 +146,8 @@ def concat_csv(csv_files):
 
 
 def get_files(path, suffix):
-    """Returns the files from a directory which match a suffix
+    """
+    Return the filenames from a directory which match a suffix
 
     Arguments:
         path (str): Pathname
@@ -163,7 +169,8 @@ def retry_on_failures(retries=3,
                                   ConnectionAbortedError, BrokenPipeError,
                                   OSError),
                       exception_to_raise=BrokenConnection):
-    """A decorator which implements a retry logic.
+    """
+    A decorator which implements a retry logic.
 
     Arguments:
         retries (int): Maximum times to retry
@@ -223,23 +230,27 @@ def retry_on_failures(retries=3,
 
 
 class Dispatcher(object):
-    """Dispatch data to different handlers"""
+    """
+    Dispatch data to different handlers
+    """
     def __init__(self):
         self.handlers = defaultdict(list)
 
     def register(self, signal, callback):
-        """Register a callback to a singal
+        """
+        Register a callback to a signal
 
         Multiple callbacks can be assigned to the same signal.
 
         Arguments:
             signal (str): The name of the signal
             callbacl (obj): A callable object to call for the given signal.
-            """
+       """
         self.handlers[signal].append(callback)
 
     def unregister(self, signal, callback):
-        """Unregister a callback to a singal
+        """
+        Unregister a callback to a signal
 
         Arguments:
             signal (str): The name of the signal
@@ -252,7 +263,8 @@ class Dispatcher(object):
                       callback, signal)
 
     def signal(self, signal, **kwargs):
-        """Run registered handlers
+        """
+        Run registered handlers
 
         Arguments:
             signal (str): A registered signal
@@ -263,7 +275,8 @@ class Dispatcher(object):
 
 
 class GraphiteHandler():
-    """A handler to send data to graphite.
+    """
+    A handler to send data to graphite.
 
     Arguments:
         server (str): Server name or IP address.
@@ -401,7 +414,9 @@ dispatcher = Dispatcher()  # pylint: disable=I0011,C0103
 
 
 class FileHandler():
-    """A handler to write data to a file"""
+    """
+    A handler to write data to a file
+    """
     def __init__(self):
         self._input = None
         self._output = None
@@ -453,7 +468,8 @@ class FileHandler():
 
 
 class EventHandler(pyinotify.ProcessEvent):
-    """An event handler for inotify to push items to a queue.
+    """
+    An event handler for inotify to push items to a queue.
 
     If the event isn't for a directory no action is taken.
 
@@ -472,19 +488,19 @@ class EventHandler(pyinotify.ProcessEvent):
             log.info("ignore %s as it isn't directory", pathname)
 
     def process_IN_CREATE(self, event):  # pylint: disable=C0103
-        "Invoked when a directory is created."
+        """Invoked when a directory is created"""
         log.debug('received an event for CREATE')
         self._put_item_to_queue(event.pathname)
 
     def process_IN_MOVED_TO(self, event):  # pylint: disable=C0103
-        "Invoked when a directory/file is moved"
+        """Invoked when a directory/file is moved"""
         log.debug('received an event for MOVE')
         self._put_item_to_queue(event.pathname)
 
 
 def configuration_check(config, section):
     """
-    Performs a sanity check on configuration
+    Perform a sanity check on configuration
 
     Arguments:
         config (obg): A configparser object which holds our configuration.
@@ -524,7 +540,7 @@ def configuration_check(config, section):
 
 def check_metrics(config):
     """
-    Checks if metrcis set by user are valid
+    Check if metrics set by user are valid
 
     Arguments:
         config (obg): A configparser object which holds our configuration.
@@ -554,7 +570,7 @@ def check_metrics(config):
 
 def read_write_access(directory):
     """
-    Checks if read/write access is granted on a directory
+    Check if read/write access is granted on a directory
 
     Arguments:
         directory (str): Directory name
@@ -580,7 +596,7 @@ def read_write_access(directory):
 
 def daemon_percentage_metrics():
     """
-    Builds a list of namedtuples which holds metric names for HAProxy
+    Build a list of namedtuples which holds metric names for HAProxy
     daemon for which we calculate a percentage.
     """
     _list = []
@@ -617,15 +633,15 @@ def calculate_percentage_per_row(row, metric):
     | 2           | 300     | 11        |
     +-------------+---------+-----------+
 
-    It returns a Pandas Series with a column name where name is metric.title
-    +-------------+---------+-----------+----------------+
-    |             | MaxConn | CurrConns | ConnPercentage |
-    +-------------+---------+-----------+----------------+
-    | Process_num |         |           |                |
-    | 0           | 100     | 13        | 13             |
-    | 1           | 100     | 15        | 15             |
-    | 2           | 100     | 11        | 11             |
-    +-------------+---------+-----------+----------------+
+    It returns a Pandas Series with a column name set to metric.title
+    +-------------+----------------+
+    |             | ConnPercentage |
+    +-------------+----------------+
+    | Process_num |                |
+    | 0           | 13             |
+    | 1           | 15             |
+    | 2           | 11             |
+    +-------------+----------------+
 
     Arguments:
 
@@ -634,7 +650,6 @@ def calculate_percentage_per_row(row, metric):
 
     Returns:
         A Pandas Series with percentage as integer
-
     """
     if row[metric.limit] == 0:
         return pandas.Series({metric.title: 0})

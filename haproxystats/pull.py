@@ -48,7 +48,8 @@ CMDS = ['show info', 'show stat']
 
 @asyncio.coroutine
 def get(socket_file, cmd, storage_dir, loop, executor, config):
-    """Fetches data from a UNIX socket.
+    """
+    Fetch data from a UNIX socket.
 
     Sends a command to HAProxy over UNIX socket, reads the response and then
     offloads the writing of the received data to a thread, so we don't block
@@ -63,7 +64,7 @@ def get(socket_file, cmd, storage_dir, loop, executor, config):
         config (obj): A configParser object which holds configuration.
 
     Returns:
-        True if statistics from a UNIX sockets are save False otherwise.
+        True if statistics from a UNIX sockets are saved False otherwise.
     """
     # try to connect to the UNIX socket
     log.debug('connecting to UNIX socket %s', socket_file)
@@ -123,7 +124,8 @@ def get(socket_file, cmd, storage_dir, loop, executor, config):
     # Offload the writing to a thread so we don't block ourselves.
 
     def write_file():
-        """Writes data to a file.
+        """
+        Write data to a file.
 
         Returns:
             True if succeeds False otherwise.
@@ -145,7 +147,8 @@ def get(socket_file, cmd, storage_dir, loop, executor, config):
 
 @asyncio.coroutine
 def pull_stats(config, storage_dir, loop, executor):
-    """Launches coroutines for pulling statistics from UNIX sockets.
+    """
+    Launch coroutines for pulling statistics from UNIX sockets.
 
     This a delegating routine.
 
@@ -199,7 +202,8 @@ def pull_stats(config, storage_dir, loop, executor):
 
 
 def supervisor(loop, config, executor):
-    """Coordinates the pulling of HAProxy statistics from UNIX sockets.
+    """
+    Coordinate the pulling of HAProxy statistics from UNIX sockets.
 
     This is the client routine which launches requests to all HAProxy
     UNIX sockets for retrieving statistics and save them to file-system.
@@ -323,7 +327,7 @@ def supervisor(loop, config, executor):
 
 
 def main():
-    """Parses CLI arguments and launches main program."""
+    """Parse CLI arguments and launch main program"""
     args = docopt(__doc__, version=VERSION)
 
     config = ConfigParser(interpolation=ExtendedInterpolation())

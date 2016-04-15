@@ -60,7 +60,9 @@ STOP_SIGNAL = 'STOP'
 
 
 class Consumer(multiprocessing.Process):
-    """Process statistics and dispatch them to handlers."""
+    """
+    Process statistics and dispatch them to handlers.
+    """
     def __init__(self, tasks, config):
         multiprocessing.Process.__init__(self)
         self.tasks = tasks  # A queue to consume items
@@ -83,7 +85,8 @@ class Consumer(multiprocessing.Process):
                                        for x in graphite_tree])
 
     def run(self):
-        """Consumer of the queue which process statistics.
+        """
+        Consume items from queue and process it.
 
         It is the target function of Process class. Consumes items from
         the queue, processes data which are pulled down by haproxystats-pull
@@ -174,7 +177,8 @@ class Consumer(multiprocessing.Process):
 
     @send_wlc(output=dispatcher, name='AllStats')
     def process_stats(self, pathname):
-        """Process all statistics.
+        """
+        Delegate the processing of statistics to other functions
 
         Arguments:
             pathname (str): A directory pathname where statistics from HAProxy
@@ -199,11 +203,12 @@ class Consumer(multiprocessing.Process):
 
     @send_wlc(output=dispatcher, name='HAProxy')
     def haproxy_stats(self, files):
-        """Process statistics for HAProxy daemon.
+        """
+        Process statistics for HAProxy daemon.
 
         Arguments:
             files (list): A list of files which contain the output of 'show
-            info' command on the stats socket of HAProxy.
+            info' command on the stats socket.
         """
         log.info('processing statistics for HAProxy daemon')
         log.debug('processing files %s', ' '.join(files))
@@ -233,7 +238,6 @@ class Consumer(multiprocessing.Process):
         else:
             # Here is where Pandas enters and starts its magic.
             dataframe = pandas.DataFrame(raw_info_stats)
-            # Get sum/average for metric
             sums = dataframe.loc[:, DAEMON_METRICS].sum()
             avgs = dataframe.loc[:, DAEMON_AVG_METRICS].mean()
             # Pandas did all the hard work, let's join above tables and extract
@@ -296,7 +300,8 @@ class Consumer(multiprocessing.Process):
             log.info('finished processing statistics for HAProxy daemon')
 
     def sites_stats(self, files):
-        """Process statistics for frontends/backends/servers.
+        """
+        Process statistics for frontends/backends/servers.
 
         Arguments:
             files (list): A list of files which contain the output of 'show
@@ -352,7 +357,8 @@ class Consumer(multiprocessing.Process):
 
     @send_wlc(output=dispatcher, name='Frontends')
     def process_frontends(self, data_frame):
-        """Process statistics for frontends.
+        """
+        Process statistics for frontends.
 
         Arguments:
             data_frame (obj): A pandas data_frame ready for processing.
@@ -400,10 +406,12 @@ class Consumer(multiprocessing.Process):
 
     @send_wlc(output=dispatcher, name='Backends')
     def process_backends(self, data_frame, *, filter_backend=None):
-        """Process statistics for backends.
+        """
+        Process statistics for backends.
 
         Arguments:
             data_frame (obj): A pandas data_frame ready for processing.
+            filter_backend: A filter to apply on data_frame.
         """
         # Filtering for Pandas
         log.debug('processing statistics for backends')
@@ -454,10 +462,12 @@ class Consumer(multiprocessing.Process):
 
     @send_wlc(output=dispatcher, name='Servers')
     def process_servers(self, data_frame, *, filter_backend=None):
-        """Process statistics for servers.
+        """
+        Process statistics for servers.
 
         Arguments:
             data_frame (obj): A pandas data_frame ready for processing.
+            filter_backend: A filter to apply on data_frame.
         """
         # A filter for rows with stats for servers
         log.debug('processing statistics for servers')
@@ -598,7 +608,8 @@ def main():
             tasks.put(pathname)
 
     def shutdown(signalnb=None, frame=None):
-        """Signal processes to exit
+        """
+        Signal processes to exit
 
         It adds STOP_SIGNAL to the queue, which causes processes to exit in a
         clean way.
