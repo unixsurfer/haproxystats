@@ -262,7 +262,7 @@ class Consumer(multiprocessing.Process):
                 indexed_by_worker = dataframe.set_index('Process_num')
                 metrics_per_worker = indexed_by_worker.loc[:, DAEMON_METRICS]
                 for worker, row in metrics_per_worker.iterrows():
-                    for values in row[1:].iteritems():
+                    for values in row.iteritems():
                         data = ("{path}.daemon.process.{worker}.{metric} "
                                 "{value} {time}\n").format(
                                     path=self.graphite_path,
