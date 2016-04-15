@@ -314,7 +314,7 @@ class Consumer(multiprocessing.Process):
         filter_backend = None
         if data_frame is not None:
             # Perform some sanitization on the raw data
-            if '# pxname' in '# pxname':
+            if '# pxname' in data_frame.columns:
                 log.debug('replace "# pxname" column with  "pxname"')
                 data_frame.rename(columns={'# pxname': 'pxname'}, inplace=True)
             if 'Unnamed: 62' in data_frame.columns:
