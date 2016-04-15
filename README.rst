@@ -155,11 +155,18 @@ Statistics for haproxystats
 calculate and send HAProxy metrics. By default provides the following list
 of metric names with values in seconds::
 
-    loadbalancers.<lb-01>.haproxy.haproxystats.WallClockTimeHAProxy
-    loadbalancers.<lb-01>.haproxy.haproxystats.WallClockTimeFrontends
-    loadbalancers.<lb-01>.haproxy.haproxystats.WallClockTimeBackends
-    loadbalancers.<lb-01>.haproxy.haproxystats.WallClockTimeServers
-    loadbalancers.<lb-01>.haproxy.haproxystats.WallClockTimeAllStats
+    loadbalancers.lb-01.haproxy.haproxystats.WallClockTimeHAProxy
+    loadbalancers.lb-01.haproxy.haproxystats.WallClockTimeFrontends
+    loadbalancers.lb-01.haproxy.haproxystats.WallClockTimeBackends
+    loadbalancers.lb-01.haproxy.haproxystats.WallClockTimeServers
+    loadbalancers.lb-01.haproxy.haproxystats.WallClockTimeAllStats
+
+It also provides the number of metrics which are send to graphite::
+
+    loadbalancers.lb-01.haproxy.haproxystats.MetricsHAProxy
+    loadbalancers.lb-01.haproxy.haproxystats.MetricsFrontend
+    loadbalancers.lb-01.haproxy.haproxystats.MetricsBackend
+    loadbalancers.lb-01.haproxy.haproxystats.MetricsServer
 
 Configuration
 -------------

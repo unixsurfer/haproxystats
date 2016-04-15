@@ -210,6 +210,7 @@ class Consumer(multiprocessing.Process):
             files (list): A list of files which contain the output of 'show
             info' command on the stats socket.
         """
+        cnt_metrics = 1  # a metric counter
         log.info('processing statistics for HAProxy daemon')
         log.debug('processing files %s', ' '.join(files))
         raw_info_stats = defaultdict(list)
@@ -240,6 +241,8 @@ class Consumer(multiprocessing.Process):
             dataframe = pandas.DataFrame(raw_info_stats)
             sums = dataframe.loc[:, DAEMON_METRICS].sum()
             avgs = dataframe.loc[:, DAEMON_AVG_METRICS].mean()
+            cnt_metrics += sums.size + avgs.size
+
             # Pandas did all the hard work, let's join above tables and extract
             # the statistics
             for values in pandas.concat([sums, avgs], axis=0).items():
@@ -252,6 +255,7 @@ class Consumer(multiprocessing.Process):
 
             if self.config.getboolean('process', 'calculate-percentages'):
                 for metric in daemon_percentage_metrics():
+                    cnt_metrics += 1
                     log.info('calculating percentage for %s', metric.name)
                     value = calculate_percentage_per_column(dataframe, metric)
                     data = "{path}.daemon.{metric} {value} {time}\n".format(
@@ -265,6 +269,8 @@ class Consumer(multiprocessing.Process):
                 log.info("processing statistics per daemon")
                 indexed_by_worker = dataframe.set_index('Process_num')
                 metrics_per_worker = indexed_by_worker.loc[:, DAEMON_METRICS]
+                cnt_metrics += metrics_per_worker.size
+
                 for worker, row in metrics_per_worker.iterrows():
                     for values in row.iteritems():
                         data = ("{path}.daemon.process.{worker}.{metric} "
@@ -287,6 +293,8 @@ class Consumer(multiprocessing.Process):
                                     calculate_percentage_per_row,
                                     axis=1,
                                     args=(metric,))
+
+                        cnt_metrics += _percentages.size
                         for worker, row in _percentages.iterrows():
                             for values in row.iteritems():
                                 data = ("{path}.daemon.process.{worker}."
@@ -297,6 +305,13 @@ class Consumer(multiprocessing.Process):
                                             value=values[1],
                                             time=self.epoch)
                                 dispatcher.signal('send', data=data)
+
+            data = ("{path}.haproxystats.MetricsHAProxy {value} "
+                    "{time}\n").format(path=self.graphite_path,
+                                       value=cnt_metrics, time=self.epoch)
+            dispatcher.signal('send', data=data)
+
+            log.info('number of HAProxy metrics %s', cnt_metrics)
             log.info('finished processing statistics for HAProxy daemon')
 
     def sites_stats(self, files):
@@ -364,6 +379,7 @@ class Consumer(multiprocessing.Process):
             data_frame (obj): A pandas data_frame ready for processing.
         """
         # Filtering for Pandas
+        cnt_metrics = 1
         log.debug('processing statistics for frontends')
         is_frontend = data_frame['svname'] == 'FRONTEND'
         filter_frontend = None
@@ -393,6 +409,7 @@ class Consumer(multiprocessing.Process):
                                                          metrics]
         # Group by frontend name and sum values for each column
         frontend_aggr_stats = frontend_stats.groupby(['pxname']).sum()
+        cnt_metrics += frontend_aggr_stats.size
         for index, row in frontend_aggr_stats.iterrows():
             name = index.replace('.', '_')
             for i in row.iteritems():
@@ -401,6 +418,11 @@ class Consumer(multiprocessing.Process):
                                            frontend=name, metric=i[0],
                                            value=i[1], time=self.epoch)
                 dispatcher.signal('send', data=data)
+
+        data = "{path}.haproxystats.MetricsFrontend {value} {time}\n".format(
+            path=self.graphite_path, value=cnt_metrics, time=self.epoch)
+        dispatcher.signal('send', data=data)
+        log.info('number of frontend metrics %s', cnt_metrics)
 
         log.debug('finished processing statistics for frontends')
 
@@ -413,8 +435,9 @@ class Consumer(multiprocessing.Process):
             data_frame (obj): A pandas data_frame ready for processing.
             filter_backend: A filter to apply on data_frame.
         """
-        # Filtering for Pandas
+        cnt_metrics = 1
         log.debug('processing statistics for backends')
+        # Filtering for Pandas
         is_backend = data_frame['svname'] == 'BACKEND'
 
         metrics = self.config.get('process', 'backend-metrics', fallback=None)
@@ -449,6 +472,9 @@ class Consumer(multiprocessing.Process):
                                                      as_index=False).mean()
         backend_merged_stats = pandas.merge(backend_aggr_sum, backend_aggr_avg,
                                             on='pxname')
+        rows, columns = backend_merged_stats.shape
+        cnt_metrics += rows * (columns - 1)  # minus the index
+
         for _, row in backend_merged_stats.iterrows():
             name = row[0].replace('.', '_')
             for i in row[1:].iteritems():
@@ -458,6 +484,11 @@ class Consumer(multiprocessing.Process):
                                            value=i[1], time=self.epoch)
                 dispatcher.signal('send', data=data)
 
+        data = "{path}.haproxystats.MetricsBackend {value} {time}\n".format(
+            path=self.graphite_path, value=cnt_metrics, time=self.epoch)
+        dispatcher.signal('send', data=data)
+
+        log.info('number of backend metrics %s', cnt_metrics)
         log.debug('finished processing statistics for backends')
 
     @send_wlc(output=dispatcher, name='Servers')
@@ -469,6 +500,7 @@ class Consumer(multiprocessing.Process):
             data_frame (obj): A pandas data_frame ready for processing.
             filter_backend: A filter to apply on data_frame.
         """
+        cnt_metrics = 1
         # A filter for rows with stats for servers
         log.debug('processing statistics for servers')
         is_server = data_frame['type'] == 2
@@ -508,6 +540,9 @@ class Consumer(multiprocessing.Process):
                                                    as_index=False).mean()
         server_merged_stats = pandas.merge(server_aggr_sum, server_aggr_avg,
                                            on=['svname', 'pxname'])
+        rows, columns = server_merged_stats.shape
+        cnt_metrics += rows * (columns - 2)
+
         for _, row in server_merged_stats.iterrows():
             backend = row[0].replace('.', '_')
             server = row[1].replace('.', '_')
@@ -534,6 +569,9 @@ class Consumer(multiprocessing.Process):
                 server_avg_metrics.groupby(['svname'], as_index=False).mean()
             server_values = pandas.merge(server_sum_values, server_avg_values,
                                          on=['svname'])
+            rows, columns = server_values.shape
+            cnt_metrics += rows * (columns - 1)  # minus the index
+
             for _, row in server_values.iterrows():
                 server = row[0].replace('.', '_')
                 for i in row[1:].iteritems():
@@ -545,6 +583,11 @@ class Consumer(multiprocessing.Process):
                                                time=self.epoch)
                     dispatcher.signal('send', data=data)
 
+        data = "{path}.haproxystats.MetricsServer {value} {time}\n".format(
+            path=self.graphite_path, value=cnt_metrics, time=self.epoch)
+        dispatcher.signal('send', data=data)
+
+        log.info('number of server metrics %s', cnt_metrics)
         log.debug('finished processing statistics for servers')
 
 
