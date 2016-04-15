@@ -1,6 +1,21 @@
 CHANGES
 =======
 
+0.3.7
+-----
+
+* RELEASE 0.3.7 version
+* Include average metrics when processing per daemon
+* Remove redundant string replacement
+* Provide number of metrics which are sent
+* Fix a silly bug in conditional statement
+* Update docstrings/comments
+* Mention that WallClockTime includes sending time
+* Add/update docstrings and fix pylint warnings
+* Fix a but where we skip CompressBpsIn metric
+* Mention in documentation about SslConnPercentage
+* Calculate percentage also for SslCurrConns
+
 0.3.6
 -----
 
