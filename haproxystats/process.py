@@ -268,7 +268,9 @@ class Consumer(multiprocessing.Process):
             if self.config.getboolean('process', 'per-process-metrics'):
                 log.info("processing statistics per daemon")
                 indexed_by_worker = dataframe.set_index('Process_num')
-                metrics_per_worker = indexed_by_worker.loc[:, DAEMON_METRICS]
+                metrics_per_worker = indexed_by_worker.loc[:,
+                                                           DAEMON_METRICS +
+                                                           DAEMON_AVG_METRICS]
                 cnt_metrics += metrics_per_worker.size
 
                 for worker, row in metrics_per_worker.iterrows():
