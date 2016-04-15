@@ -152,7 +152,7 @@ Statistics for haproxystats
 ###########################
 
 **haproxystats** provides statistics for the time it takes to process,
-calculate and produce HAProxy metrics. By default provides the following list
+calculate and send HAProxy metrics. By default provides the following list
 of metric names with values in seconds::
 
     loadbalancers.<lb-01>.haproxy.haproxystats.WallClockTimeHAProxy
