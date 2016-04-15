@@ -260,7 +260,7 @@ class Consumer(multiprocessing.Process):
                     value = calculate_percentage_per_column(dataframe, metric)
                     data = "{path}.daemon.{metric} {value} {time}\n".format(
                         path=self.graphite_path,
-                        metric=metric.title.replace('.', '_'),
+                        metric=metric.title,
                         value=value,
                         time=self.epoch)
                     dispatcher.signal('send', data=data)
