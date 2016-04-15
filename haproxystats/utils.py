@@ -178,7 +178,16 @@ def retry_on_failures(retries=3,
     it raises one of the specified exceptions.
     """
     def dec(func):
+        """
+        The real decorator.
+
+        Arguments:
+            func (obj): A function to decorate
+        """
         def decorated_func(*args, **kwargs):
+            """
+            Retry decorated functions.
+            """
             backoff_interval = interval
             raised = None
             attempt = 0  # times to attempt a connect after a failure
@@ -371,7 +380,7 @@ class GraphiteHandler():
                 # gaps in graphs.
                 continue
 
-    def close(self, **kwargs):
+    def close(self, **kwargs):  # pylint: disable=unused-argument
         """Close TCP connection to graphite relay"""
         log.info('closing connection to %s on port %s', self.server, self.port)
         log.info('TCP info: %s', self.connection)
@@ -429,7 +438,7 @@ class FileHandler():
                 log.error('failed to make directory %s: %s', base_dir, error)
         self.set_path(filepath=os.path.join(base_dir, 'stats'))
 
-    def flush(self, **kwargs):
+    def flush(self, **kwargs):  # pylint: disable=unused-argument
         """Flush data to disk"""
         self._input.seek(0)
         try:
@@ -683,6 +692,7 @@ def send_wlc(output, name):
 
     Arguments:
         output (obj): A dispatcher object which has send method registered
+        name (str): A name to append to the metric.
     """
     def decorated(func):
         """
@@ -701,7 +711,7 @@ def send_wlc(output, name):
             elapsed_time = '{t:.3f}'.format(t=time.time() - start_time)
             data = "{path}.haproxystats.{metric} {value} {time}\n".format(
                 path=getattr(self, 'graphite_path'),
-                metric='WallClockTime'+ name,
+                metric='WallClockTime' + name,
                 value=elapsed_time,
                 time=getattr(self, 'epoch'))
             log.info("wall clock time in seconds for %s %s",
