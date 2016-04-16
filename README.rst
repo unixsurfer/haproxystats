@@ -594,6 +594,162 @@ I would love to hear what other people think about **haproxystats** and provide
 feedback. Please post your comments, bug reports and wishes on my `issues page
 <https://github.com/unixsurfer/haproxystats/issues>`_.
 
+How to setup a development environment
+######################################
+
+Install HAProxy::
+
+    % sudo apt-get install haproxy
+
+Use a basic HAProxy configuration in multiprocess mode::
+
+    global
+        log 127.0.0.1 len 2048 local2
+        chroot /var/lib/haproxy
+        stats socket /run/haproxy/admin1.sock mode 666 level admin process 1
+        stats socket /run/haproxy/admin2.sock mode 666 level admin process 2
+        stats socket /run/haproxy/admin3.sock mode 666 level admin process 3
+        stats socket /run/haproxy/admin4.sock mode 666 level admin process 4
+        # allow read/write access to anyone----------^
+        stats timeout 30s
+        user haproxy
+        group haproxy
+        daemon
+        nbproc 4
+        cpu-map 1 0
+        cpu-map 2 1
+        cpu-map 3 1
+        cpu-map 4 0
+
+    defaults
+        log global
+        mode    http
+        timeout connect 5000
+        timeout client  50000
+        timeout server  50000
+
+    frontend frontend_proc1
+        bind 0.0.0.0:81 process 1
+        default_backend backend_proc1
+
+    frontend frontend_proc2
+        bind 0.0.0.0:82 process 2
+        default_backend backend_proc1
+
+    frontend frontend1_proc34
+        bind :83 process 3
+        bind :83 process 4
+        default_backend backend1_proc34
+
+    backend backend_proc1
+        bind-process 1
+        default-server inter 1000s
+        option httpchk GET / HTTP/1.1\r\nHost:\ .com\r\nUser-Agent:\ HAProxy
+        server member1_proc1 10.189.224.169:80 weight 100 check fall 2 rise 3
+        server member2_proc1 10.196.70.109:80 weight 100 check fall 2 rise 3
+        server bck_all_srv1 10.196.70.109:88 weight 100 check fall 2 rise 3
+
+    backend backend1_proc34
+        bind-process 3,4
+        default-server inter 1000s
+        option httpchk GET / HTTP/1.1\r\nHost:\ .com\r\nUser-Agent:\ HAProxy
+        server bck1_proc34_srv1 10.196.70.109:80 check fall 2 inter 5s rise 3
+        server bck1_proc34_srv2 10.196.70.109:80 check fall 2 inter 5s rise 3
+        server bck_all_srv1 10.196.70.109:80 check fall 2 inter 5s rise 3
+
+    backend backend_proc2
+        bind-process 2
+        default-server inter 1000s
+        option httpchk GET / HTTP/1.1\r\nHost:\ .com\r\nUser-Agent:\ HAProxy
+        server bck_proc2_srv1_proc2 127.0.0.1:8001 check fall 2 inter 5s rise 3
+        server bck_proc2_srv2_proc2 127.0.0.1:8002 check fall 2 inter 5s rise 3
+        server bck_proc2_srv3_proc2 127.0.0.1:8003 check fall 2 inter 5s rise 3
+        server bck_proc2_srv4_proc2 127.0.0.1:8004 check fall 2 inter 5s rise 3
+
+Start HAProxy and check that is up::
+
+    % sudo systemctl start haproxy.service;systemctl status -l haproxy.service
+
+Create python virtual environment using virtualenvwrapper tool::
+
+    % mkvirtualenv --python=`which python3` haproxystats
+
+Clone the project::
+
+    % mkdir ~/repo;cd ~/repo
+    % git clone https://github.com/unixsurfer/haproxystats
+
+Install necessary libraries::
+
+    % cd haproxystats
+    % pip install -U pbr setuptools
+    % pip install -r ./requirements.txt
+
+Launch a TCP server which acts a Graphite relay and listens on 127.0.0.1:39991::
+
+    % python3 ./tcp_server.py
+
+Install haproxystats::
+
+    % python setup.py install
+
+Create necessary directory structure::
+
+    % mkdir -p ./var/var/lib/haproxystats
+    % mkdir -p ./var/etc
+    % mkdir -p ./var/etc/haproxystats.d
+
+Adjust the following configuration and save in ./var/etc/haproxystats.conf::
+
+    [DEFAULT]
+    loglevel = debug
+    retries  = 2
+    timeout  = 1
+    interval = 2
+
+    [paths]
+    base-dir = /home/<username>/repo/haproxystats/var/var/lib/haproxystats
+
+    [pull]
+    socket-dir    = /run/haproxy
+    retries       = 1
+    timeout       = 0.1
+    interval      = 0.5
+    pull-timeout  = 10
+    pull-interval = 10
+    dst-dir       = ${paths:base-dir}/incoming
+    tmp-dst-dir   = ${paths:base-dir}/incoming.tmp
+    workers         = 8
+
+    [process]
+    src-dir               = ${paths:base-dir}/incoming
+    workers               = 2
+    calculate-percentages = true
+    per-process-metrics = true
+
+    [graphite]
+    server          = 127.0.0.1
+    port            = 39991
+    retries         = 3
+    interval        = 0.8
+    timeout         = 0.9
+    delay           = 10
+    backoff         = 2
+    namespace       = loadbalancers
+    prefix_hostname = true
+    fqdn            = true
+    queue-size      = 1000
+
+    [local-store]
+    dir = ${paths:base-dir}/local-store
+
+Start haproxystats-pull and haproxystats-process on 2 different terminals::
+
+    % haproxystats-pull -f var/etc/haproxystats.conf
+    % haproxystats-process -f var/etc/haproxystats.conf
+
+**Start hacking!**
+
 Installation
 ------------
 
@@ -614,8 +770,8 @@ Build a source archive for manual installation::
    python setup.py sdist
 
 
-Release
--------
+How to make a release
+---------------------
 
 #. Bump version in haproxystats/__init__.py
 
@@ -644,6 +800,10 @@ Release
 #. Push changes::
 
       git push;git push --tags
+
+#. Upload to Python Package Index::
+
+      twine upload -s -p  dist/*
 
 
 Contributers
