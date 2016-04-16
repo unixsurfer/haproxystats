@@ -1,2 +1,1 @@
 - Add instructions in README on setting up a development environment
-- Calculate percentages for some metrics(scur/qcur/rate/Maxconn...)
