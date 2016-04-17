@@ -666,15 +666,18 @@ Use a basic HAProxy configuration in multiprocess mode::
         server bck_proc2_srv3_proc2 127.0.0.1:8003 check fall 2 inter 5s rise 3
         server bck_proc2_srv4_proc2 127.0.0.1:8004 check fall 2 inter 5s rise 3
 
-Start HAProxy and check that is up::
+Start HAProxy and check it is up::
 
     % sudo systemctl start haproxy.service;systemctl status -l haproxy.service
 
-Create python virtual environment using virtualenvwrapper tool::
+Create a python virtual environment using virtualenvwrapper tool::
 
-    % mkvirtualenv --python=`which python3` haproxystats
+    % mkvirtualenv --python=`which python3` haproxystats-dev
 
-Clone the project::
+**Do not** exit the *haproxystats-dev* virtual environment.
+
+Clone the project, if you are planning to contribute then you should fork it on
+GitHub and clone that project instead::
 
     % mkdir ~/repo;cd ~/repo
     % git clone https://github.com/unixsurfer/haproxystats
@@ -685,7 +688,7 @@ Install necessary libraries::
     % pip install -U pbr setuptools
     % pip install -r ./requirements.txt
 
-Launch a TCP server which acts a Graphite relay and listens on 127.0.0.1:39991::
+Start a TCP server which acts a Graphite relay and listens on 127.0.0.1:39991::
 
     % python3 ./tcp_server.py
 
@@ -699,7 +702,7 @@ Create necessary directory structure::
     % mkdir -p ./var/etc
     % mkdir -p ./var/etc/haproxystats.d
 
-Adjust the following configuration and save in ./var/etc/haproxystats.conf::
+Adjust the following configuration and save it in ./var/etc/haproxystats.conf::
 
     [DEFAULT]
     loglevel = debug
@@ -719,13 +722,13 @@ Adjust the following configuration and save in ./var/etc/haproxystats.conf::
     pull-interval = 10
     dst-dir       = ${paths:base-dir}/incoming
     tmp-dst-dir   = ${paths:base-dir}/incoming.tmp
-    workers         = 8
+    workers       = 8
 
     [process]
     src-dir               = ${paths:base-dir}/incoming
     workers               = 2
     calculate-percentages = true
-    per-process-metrics = true
+    per-process-metrics   = true
 
     [graphite]
     server          = 127.0.0.1
@@ -748,7 +751,11 @@ Start haproxystats-pull and haproxystats-process on 2 different terminals::
     % haproxystats-pull -f var/etc/haproxystats.conf
     % haproxystats-process -f var/etc/haproxystats.conf
 
-**Start hacking!**
+Exit from *haproxystats-dev* virtual environment
+
+    % deactivate
+
+**Start hacking and don't forget to make a Pull Request**
 
 Installation
 ------------
