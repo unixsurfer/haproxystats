@@ -751,7 +751,7 @@ Start haproxystats-pull and haproxystats-process on 2 different terminals::
     % haproxystats-pull -f var/etc/haproxystats.conf
     % haproxystats-process -f var/etc/haproxystats.conf
 
-Exit from *haproxystats-dev* virtual environment
+Exit from *haproxystats-dev* virtual environment::
 
     % deactivate
 
