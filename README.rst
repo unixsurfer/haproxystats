@@ -55,17 +55,19 @@ command is stored in individual files which are saved under one directory. The
 time (seconds since the epoch) of retrieval is used to name that directory.
 haproxystats-process watches for changes on the parent directory and when a
 directory is created it adds its full path to the queue. Multiple workers pick
-up items from the queue (directories) and process statistics from those
+up items (directories) from the queue and process statistics from those
 directories.
 
 haproxystats-pull
 #################
 
-haproxystats-pull leverages the asyncio framework from Python by utilizing
+haproxystats-pull leverages the `asyncio`_ framework from Python by utilizing
 coroutines to multiplex I/O access over several `stats socket`_, which are
-simple UNIX sockets. The actual task of storing the data to the file system is
-off-loaded to a very light `pool of threads`_ in order to avoid blocking the
-coroutines during the disk IO phase.
+simple UNIX sockets.
+
+The actual task of storing the data to the file system is off-loaded to a very
+light `pool of threads`_ in order to avoid blocking the coroutines during the
+disk IO phase.
 
 haproxystats-pull manages the *incoming* directory and makes sure directories
 are created with correct names. It also suspends the collection when the number
@@ -98,15 +100,19 @@ This an example of directory structure:
 haproxystats-process
 ####################
 
-haproxystats-process is a multiprocess program.The parent process uses the
-the Linux kernel's `inotify`_ API to watch for changes in *incoming* directory.
+haproxystats-process is a multiprocess program. The parent process uses the
+Linux kernel's `inotify`_ API to watch for changes in *incoming* directory.
+
 It receives an event when a directory is either created or moved in *incoming*
 directory. The event contains the absolute path name of that directory. It
 maintains an internal queue in which it puts directory names. Multiple child
 processes pick directory names from the queue and process the data.
+
 Its worker dispatches statistics to various destinations. The directories are
 removed from *incoming* directory when all statistics are successfully
-processed. When haproxystats-process starts it scans the *incoming* directory
+processed.
+
+When haproxystats-process starts it scans the *incoming* directory
 for new directories and processes them instantly, so you don't lose statistics
 if haproxystats-process is unavailable for sometime.
 
@@ -220,7 +226,8 @@ This is an example configuration file (/etc/haproxystats.conf)::
     #dir = ${paths:base-dir}/local-store
 
 All the above settings are optional as haproxystats comes with default values
-for all of them.
+for all of them. Thus, both programs can be started without supplying any
+configuration.
 
 DEFAULT section
 ###############
@@ -320,7 +327,7 @@ process section
 
 
 A directory to watch for changes. It should point to the same directory as
-the **dst-dir** setting from *pull* section.
+the **dst-dir** option from *pull* section.
 
 * **workers** Defaults to **4**
 
@@ -332,15 +339,27 @@ which can consume a fair bit of CPU.
 A list of frontend metric names separated by space to process. By default all
 statistics are processed and this overwrites the default selection.
 
+haproxystats-process emits an error and refuses to start if metrics aren't
+valid HAProxy metrics. Check the list of valid metrics in Chapter 9.1 of
+`management`_ documentation of HAProxy.
+
 * **backend-metrics** Unset by default
 
 A list of backend metric names separated by space to process. By default all
 statistics are processed and this overwrites the default selection.
 
+haproxystats-process emits an error and refuses to start if metrics aren't
+valid HAProxy metrics. Check the list of valid metrics in Chapter 9.1 of
+`management`_ documentation of HAProxy.
+
 * **server-metrics** Unset by default
 
 A list of server metric names separated by space to process. By default all
 statistics are processed and this overwrites the default selection.
+
+haproxystats-process emits an error and refuses to start if metrics aren't
+valid HAProxy metrics. Check the list of valid metrics in Chapter 9.1 of
+`management`_ documentation of HAProxy.
 
 * **aggr-server-metrics** Defaults to **false**
 
@@ -851,3 +870,4 @@ Contacts
 .. _pool of threads: https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor
 .. _INI: https://en.wikipedia.org/wiki/INI_file
 .. _carbon-c-relay: https://github.com/grobian/carbon-c-relay
+.. _management: http://www.haproxy.org/download/1.6/doc/management.txt
