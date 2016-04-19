@@ -316,7 +316,8 @@ class GraphiteHandler():
                            socket.timeout)
 
         log.debug('connect timeout %.2fsecs write timeout %.2fsecs',
-                  self.connect_timeout, self.write_timeout)
+                  self.connect_timeout,
+                  self.write_timeout)
 
     def open(self):
         """Open a connection to graphite relay."""
@@ -324,18 +325,24 @@ class GraphiteHandler():
             self.connect()
         except BrokenConnection as error:
             self.connection = None
-            log.error('failed to connect to %s on port %s: %s', self.server,
-                      self.port, error.raised)
+            log.error('failed to connect to %s on port %s: %s',
+                      self.server,
+                      self.port,
+                      error.raised)
         else:
             self.connection.settimeout(self.write_timeout)
-            log.info('successfully connected to %s on port %s, TCP info'
-                     '%s', self.server, self.port, self.connection)
+            log.info('successfully connected to %s on port %s, TCP info %s',
+                     self.server,
+                     self.port,
+                     self.connection)
 
     @property
     def connect(self):
         """A convenient wrapper so we can pass arguments to decorator"""
-        @retry_on_failures(retries=self.retries, interval=self.interval,
-                           backoff=self.backoff, exceptions=self.exceptions,
+        @retry_on_failures(retries=self.retries,
+                           interval=self.interval,
+                           backoff=self.backoff,
+                           exceptions=self.exceptions,
                            exception_to_raise=BrokenConnection)
         def _create_connection():
             """Try to open a connection.
@@ -344,9 +351,9 @@ class GraphiteHandler():
             logic.
             """
             log.info('connecting to %s on port %s', self.server, self.port)
-            self.connection =\
-                socket.create_connection((self.server, self.port),
-                                         timeout=self.connect_timeout)
+            self.connection = socket.create_connection(
+                (self.server, self.port),
+                timeout=self.connect_timeout)
 
         return _create_connection
 
@@ -404,10 +411,12 @@ class GraphiteHandler():
             log.warning('closing connection failed: %s', exc)
         except (AttributeError, OSError) as exc:
             log.critical('closing connection failed: %s. We should not receive'
-                         ' this exception, it is a BUG', exc)
+                         ' this exception, it is a BUG',
+                         exc)
         else:
             log.info('successfully closed connection to %s on port %s',
-                     self.server, self.port)
+                     self.server,
+                     self.port)
 
 
 dispatcher = Dispatcher()  # pylint: disable=I0011,C0103
@@ -516,9 +525,10 @@ def configuration_check(config, section):
     num_level = getattr(logging, loglevel.upper(), None)
     if not isinstance(num_level, int):
         raise ValueError("invalid configuration, section:'{s}' option:'{o}' "
-                         "error: invalid loglevel '{l}'".format(s=section,
-                                                                o='loglevel',
-                                                                l=loglevel))
+                         "error: invalid loglevel '{l}'"
+                         .format(s=section,
+                                 o='loglevel',
+                                 l=loglevel))
 
     for option, getter in OPTIONS_TYPE[section].items():
         try:
@@ -530,12 +540,13 @@ def configuration_check(config, section):
             # easier.
             if 'section' not in str(exc):
                 raise ValueError("invalid configuration, section:'{s}' "
-                                 "option:'{p}' error:{e}".format(s=section,
-                                                                 p=option,
-                                                                 e=str(exc)))
+                                 "option:'{p}' error:{e}"
+                                 .format(s=section,
+                                         p=option,
+                                         e=str(exc)))
             else:
-                raise ValueError("invalid configuration, error:{e}".format(
-                    e=str(exc)))
+                raise ValueError("invalid configuration, error:{e}"
+                                 .format(e=str(exc)))
 
 
 def check_metrics(config):
@@ -562,10 +573,10 @@ def check_metrics(config):
                 globals().get('{}_METRICS'.format(metric_type.upper()))
             if not set(valid_metrics).issuperset(metrics):
                 raise ValueError("invalid configuration, section:'{s}' "
-                                 "option:'{p}' error:'{e}'".format(
-                                     s='process',
-                                     p=option,
-                                     e='invalid list of metrics'))
+                                 "option:'{p}' error:'{e}'"
+                                 .format(s='process',
+                                         p=option,
+                                         e='invalid list of metrics'))
 
 
 def read_write_access(directory):
@@ -587,9 +598,9 @@ def read_write_access(directory):
             _file.write('')
     except OSError as exc:
         raise ValueError("invalid configuration, read and write access is not "
-                         "granted for '{d}' directory, error:{e}".format(
-                             d=directory,
-                             e=str(exc)))
+                         "granted for '{d}' directory, error:{e}"
+                         .format(d=directory,
+                                 e=str(exc)))
     else:
         os.remove(check_file)
 
@@ -656,8 +667,8 @@ def calculate_percentage_per_row(row, metric):
 
     return pandas.Series(
         {
-            metric.title: (
-                100*row[metric.name] / row[metric.limit]).astype('int')
+            metric.title: (100 * row[metric.name]
+                           / row[metric.limit]).astype('int')
         }
     )
 
@@ -699,7 +710,7 @@ def calculate_percentage_per_column(dataframe, metric):
 
 def send_wlc(output, name):
     """
-    A decorator to send to graphite the wall clock time of a function/method
+    A decorator to send to graphite the wall clock time of a method
 
     The decorated method must have the following attributes:
         graphite_path (str): The graphite path to use for storing the metric
@@ -724,11 +735,11 @@ def send_wlc(output, name):
             start_time = time.time()
             result = func(self, *args, **kwargs)
             elapsed_time = '{t:.3f}'.format(t=time.time() - start_time)
-            data = "{path}.haproxystats.{metric} {value} {time}\n".format(
-                path=getattr(self, 'graphite_path'),
-                metric='WallClockTime' + name,
-                value=elapsed_time,
-                time=getattr(self, 'epoch'))
+            data = ("{p}.haproxystats.{m} {v} {t}\n"
+                    .format(p=getattr(self, 'graphite_path'),
+                            m='WallClockTime' + name,
+                            v=elapsed_time,
+                            t=getattr(self, 'epoch')))
             log.info("wall clock time in seconds for %s %s",
                      func.__name__,
                      elapsed_time)

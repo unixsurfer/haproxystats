@@ -143,7 +143,8 @@ class Consumer(multiprocessing.Process):
 
                 # update filename for file handler.
                 # This *does not* error if a file handler is not registered.
-                dispatcher.signal('loop', local_store=self.local_store,
+                dispatcher.signal('loop',
+                                  local_store=self.local_store,
                                   epoch_time=self.epoch)
 
                 self.process_stats(incoming_dir)
@@ -163,11 +164,11 @@ class Consumer(multiprocessing.Process):
                                  'directory!', incoming_dir, exc)
                 elapsed_time = time.time() - start_time
                 log.info('total wall clock time in seconds %.3f', elapsed_time)
-                data = "{path}.haproxystats.{metric} {value} {time}\n".format(
-                    path=self.graphite_path,
-                    metric='TotalWallClockTime',
-                    value="{t:.3f}".format(t=elapsed_time),
-                    time=self.epoch)
+                data = ("{p}.haproxystats.{m} {v} {t}\n"
+                        .format(p=self.graphite_path,
+                                m='TotalWallClockTime',
+                                v="{t:.3f}".format(t=elapsed_time),
+                                t=self.epoch))
                 dispatcher.signal('send', data=data)
                 log.info('finished with %s', incoming_dir)
         except KeyboardInterrupt:
@@ -246,11 +247,11 @@ class Consumer(multiprocessing.Process):
             # Pandas did all the hard work, let's join above tables and extract
             # the statistics
             for values in pandas.concat([sums, avgs], axis=0).items():
-                data = "{path}.daemon.{metric} {value} {time}\n".format(
-                    path=self.graphite_path,
-                    metric=values[0].replace('.', '_'),
-                    value=values[1],
-                    time=self.epoch)
+                data = ("{p}.daemon.{m} {v} {t}\n"
+                        .format(p=self.graphite_path,
+                                m=values[0].replace('.', '_'),
+                                v=values[1],
+                                t=self.epoch))
                 dispatcher.signal('send', data=data)
 
             if self.config.getboolean('process', 'calculate-percentages'):
@@ -258,59 +259,54 @@ class Consumer(multiprocessing.Process):
                     cnt_metrics += 1
                     log.info('calculating percentage for %s', metric.name)
                     value = calculate_percentage_per_column(dataframe, metric)
-                    data = "{path}.daemon.{metric} {value} {time}\n".format(
-                        path=self.graphite_path,
-                        metric=metric.title,
-                        value=value,
-                        time=self.epoch)
+                    data = ("{p}.daemon.{m} {v} {t}\n"
+                            .format(p=self.graphite_path,
+                                    m=metric.title,
+                                    v=value,
+                                    t=self.epoch))
                     dispatcher.signal('send', data=data)
 
             if self.config.getboolean('process', 'per-process-metrics'):
                 log.info("processing statistics per daemon")
                 indexed_by_worker = dataframe.set_index('Process_num')
-                metrics_per_worker = indexed_by_worker.loc[:,
-                                                           DAEMON_METRICS +
-                                                           DAEMON_AVG_METRICS]
+                metrics_per_worker = (indexed_by_worker
+                                      .loc[:, DAEMON_METRICS +
+                                           DAEMON_AVG_METRICS])
                 cnt_metrics += metrics_per_worker.size
 
                 for worker, row in metrics_per_worker.iterrows():
                     for values in row.iteritems():
-                        data = ("{path}.daemon.process.{worker}.{metric} "
-                                "{value} {time}\n").format(
-                                    path=self.graphite_path,
-                                    worker=worker,
-                                    metric=values[0].replace('.', '_'),
-                                    value=values[1],
-                                    time=self.epoch)
+                        data = ("{p}.daemon.process.{w}.{m} {v} {t}\n"
+                                .format(p=self.graphite_path,
+                                        w=worker,
+                                        m=values[0].replace('.', '_'),
+                                        v=values[1],
+                                        t=self.epoch))
                         dispatcher.signal('send', data=data)
 
                 if self.config.getboolean('process', 'calculate-percentages'):
                     for metric in daemon_percentage_metrics():
                         log.info('calculating percentage for %s per daemon',
                                  metric.name)
-                        _percentages =\
-                            metrics_per_worker.loc[:, [
-                                metric.limit,
-                                metric.name]].apply(
-                                    calculate_percentage_per_row,
-                                    axis=1,
-                                    args=(metric,))
+                        _percentages = (metrics_per_worker
+                                        .loc[:, [metric.limit, metric.name]]
+                                        .apply(calculate_percentage_per_row,
+                                               axis=1,
+                                               args=(metric,)))
 
                         cnt_metrics += _percentages.size
                         for worker, row in _percentages.iterrows():
                             for values in row.iteritems():
-                                data = ("{path}.daemon.process.{worker}."
-                                        "{metric} {value} {time}\n").format(
-                                            path=self.graphite_path,
-                                            worker=worker,
-                                            metric=values[0].replace('.', '_'),
-                                            value=values[1],
-                                            time=self.epoch)
+                                data = ("{p}.daemon.process.{w}.{m} {v} {t}\n"
+                                        .format(p=self.graphite_path,
+                                                w=worker,
+                                                m=values[0].replace('.', '_'),
+                                                v=values[1],
+                                                t=self.epoch))
                                 dispatcher.signal('send', data=data)
 
-            data = ("{path}.haproxystats.MetricsHAProxy {value} "
-                    "{time}\n").format(path=self.graphite_path,
-                                       value=cnt_metrics, time=self.epoch)
+            data = ("{p}.haproxystats.MetricsHAProxy {v} {t}\n"
+                    .format(p=self.graphite_path, v=cnt_metrics, t=self.epoch))
             dispatcher.signal('send', data=data)
 
             log.info('number of HAProxy metrics %s', cnt_metrics)
@@ -337,7 +333,8 @@ class Consumer(multiprocessing.Process):
             if 'Unnamed: 62' in data_frame.columns:
                 log.debug('remove "Unnamed: 62" column')
                 try:
-                    data_frame.drop(labels=['Unnamed: 62'], axis=1,
+                    data_frame.drop(labels=['Unnamed: 62'],
+                                    axis=1,
                                     inplace=True)
                 except ValueError as error:
                     log.warning("failed to drop 'Unnamed: 62' column with: %s",
@@ -363,8 +360,8 @@ class Consumer(multiprocessing.Process):
                 excluded_backends = load_file_content(exclude_backends_file)
                 if excluded_backends:
                     log.info('excluding backends %s', excluded_backends)
-                    filter_backend =\
-                        ~data_frame['pxname'].isin(excluded_backends)
+                    filter_backend = (~data_frame['pxname']
+                                      .isin(excluded_backends))
 
             self.process_backends(data_frame, filter_backend=filter_backend)
             self.process_servers(data_frame, filter_backend=filter_backend)
@@ -393,36 +390,40 @@ class Consumer(multiprocessing.Process):
             metrics = FRONTEND_METRICS
         log.debug('metric names for frontends %s', metrics)
 
-        # Get rows only for frontends and only for a selection of columns
-        exclude_frontends_file = self.config.get(
-            'process', 'exclude-frontends', fallback=None)
+        exclude_frontends_file = self.config.get('process',
+                                                 'exclude-frontends',
+                                                 fallback=None)
         if exclude_frontends_file is not None:
             excluded_frontends = load_file_content(exclude_frontends_file)
-            if excluded_frontends:
+            if excluded_frontends:  # in case the file is empty
                 log.info('excluding frontends %s', excluded_frontends)
-                filter_frontend =\
-                    ~data_frame['pxname'].isin(excluded_frontends)
+                filter_frontend = (~data_frame['pxname']
+                                   .isin(excluded_frontends))
         if filter_frontend is not None:
-            frontend_stats =\
-                data_frame[is_frontend & filter_frontend].loc[:, ['pxname'] +
-                                                              metrics]
+            frontend_stats = (data_frame[is_frontend & filter_frontend]
+                              .loc[:, ['pxname'] + metrics])
         else:
-            frontend_stats = data_frame[is_frontend].loc[:, ['pxname'] +
-                                                         metrics]
+            frontend_stats = (data_frame[is_frontend]
+                              .loc[:, ['pxname'] + metrics])
+
         # Group by frontend name and sum values for each column
         frontend_aggr_stats = frontend_stats.groupby(['pxname']).sum()
         cnt_metrics += frontend_aggr_stats.size
         for index, row in frontend_aggr_stats.iterrows():
             name = index.replace('.', '_')
             for i in row.iteritems():
-                data = ("{path}.frontend.{frontend}.{metric} {value} "
-                        "{time}\n").format(path=self.graphite_path,
-                                           frontend=name, metric=i[0],
-                                           value=i[1], time=self.epoch)
+                data = ("{p}.frontend.{f}.{m} {v} {t}\n"
+                        .format(p=self.graphite_path,
+                                f=name,
+                                m=i[0],
+                                v=i[1],
+                                t=self.epoch))
                 dispatcher.signal('send', data=data)
 
-        data = "{path}.haproxystats.MetricsFrontend {value} {time}\n".format(
-            path=self.graphite_path, value=cnt_metrics, time=self.epoch)
+        data = ("{p}.haproxystats.MetricsFrontend {v} {t}\n"
+                .format(p=self.graphite_path,
+                        v=cnt_metrics,
+                        t=self.epoch))
         dispatcher.signal('send', data=data)
         log.info('number of frontend metrics %s', cnt_metrics)
 
@@ -451,43 +452,37 @@ class Consumer(multiprocessing.Process):
         # Get rows only for backends. For some metrics we need the sum and
         # for others the average, thus we split them.
         if filter_backend is not None:
-            backend_stats_sum =\
-                data_frame[is_backend & filter_backend].loc[:, [
-                    'pxname'
-                    ] + metrics]
-            backend_stats_avg =\
-                data_frame[is_backend & filter_backend].loc[:, [
-                    'pxname'
-                    ] + BACKEND_AVG_METRICS]
+            stats_sum = (data_frame[is_backend & filter_backend]
+                         .loc[:, ['pxname'] + metrics])
+            stats_avg = (data_frame[is_backend & filter_backend]
+                         .loc[:, ['pxname'] + BACKEND_AVG_METRICS])
         else:
-            backend_stats_sum = data_frame[is_backend].loc[:, [
-                'pxname'
-                ] + metrics]
-            backend_stats_avg = data_frame[is_backend].loc[:, [
-                'pxname'
-                ] + BACKEND_AVG_METRICS]
+            stats_sum = data_frame[is_backend].loc[:, ['pxname'] + metrics]
+            stats_avg = (data_frame[is_backend]
+                         .loc[:, ['pxname'] + BACKEND_AVG_METRICS])
 
-        backend_aggr_sum = backend_stats_sum.groupby(['pxname'],
-                                                     as_index=False).sum()
+        aggr_sum = stats_sum.groupby(['pxname'], as_index=False).sum()
+        aggr_avg = stats_avg.groupby(['pxname'], as_index=False).mean()
+        merged_stats = pandas.merge(aggr_sum, aggr_avg, on='pxname')
 
-        backend_aggr_avg = backend_stats_avg.groupby(['pxname'],
-                                                     as_index=False).mean()
-        backend_merged_stats = pandas.merge(backend_aggr_sum, backend_aggr_avg,
-                                            on='pxname')
-        rows, columns = backend_merged_stats.shape
+        rows, columns = merged_stats.shape
         cnt_metrics += rows * (columns - 1)  # minus the index
 
-        for _, row in backend_merged_stats.iterrows():
+        for _, row in merged_stats.iterrows():
             name = row[0].replace('.', '_')
             for i in row[1:].iteritems():
-                data = ("{path}.backend.{backend}.{metric} {value} "
-                        "{time}\n").format(path=self.graphite_path,
-                                           backend=name, metric=i[0],
-                                           value=i[1], time=self.epoch)
+                data = ("{p}.backend.{b}.{m} {v} {t}\n"
+                        .format(p=self.graphite_path,
+                                b=name,
+                                m=i[0],
+                                v=i[1],
+                                t=self.epoch))
                 dispatcher.signal('send', data=data)
 
-        data = "{path}.haproxystats.MetricsBackend {value} {time}\n".format(
-            path=self.graphite_path, value=cnt_metrics, time=self.epoch)
+        data = ("{p}.haproxystats.MetricsBackend {v} {t}\n"
+                .format(p=self.graphite_path,
+                        v=cnt_metrics,
+                        t=self.epoch))
         dispatcher.signal('send', data=data)
 
         log.info('number of backend metrics %s', cnt_metrics)
@@ -504,10 +499,12 @@ class Consumer(multiprocessing.Process):
         """
         cnt_metrics = 1
         # A filter for rows with stats for servers
-        log.debug('processing statistics for servers')
         is_server = data_frame['type'] == 2
 
-        server_metrics = self.config.get('process', 'server-metrics',
+        log.debug('processing statistics for servers')
+
+        server_metrics = self.config.get('process',
+                                         'server-metrics',
                                          fallback=None)
         if server_metrics is not None:
             server_metrics = server_metrics.split(' ')
@@ -517,76 +514,73 @@ class Consumer(multiprocessing.Process):
         # Get rows only for servers. For some metrics we need the sum and
         # for others the average, thus we split them.
         if filter_backend is not None:
-            server_stats_sum =\
-                data_frame[is_server & filter_backend].loc[:, [
-                    'pxname',
-                    'svname'
-                    ] + server_metrics]
-            server_stats_avg =\
-                data_frame[is_server & filter_backend].loc[:, [
-                    'pxname',
-                    'svname'
-                    ] + SERVER_AVG_METRICS]
+            stats_sum = (data_frame[is_server & filter_backend]
+                         .loc[:, ['pxname', 'svname'] + server_metrics])
+            stats_avg = (data_frame[is_server & filter_backend]
+                         .loc[:, ['pxname', 'svname'] + SERVER_AVG_METRICS])
         else:
-            server_stats_sum = data_frame[is_server].loc[:, [
-                'pxname',
-                'svname'] + server_metrics]
-            server_stats_avg = data_frame[is_server].loc[:, [
-                'pxname',
-                'svname'] + SERVER_AVG_METRICS]
-        server_aggr_sum = server_stats_sum.groupby(['pxname', 'svname'],
-                                                   as_index=False).sum()
-        server_stats_avg = data_frame[is_server].loc[:, ['pxname', 'svname'] +
-                                                     SERVER_AVG_METRICS]
-        server_aggr_avg = server_stats_avg.groupby(['pxname', 'svname'],
-                                                   as_index=False).mean()
-        server_merged_stats = pandas.merge(server_aggr_sum, server_aggr_avg,
-                                           on=['svname', 'pxname'])
-        rows, columns = server_merged_stats.shape
+            stats_sum = (data_frame[is_server]
+                         .loc[:, ['pxname', 'svname'] + server_metrics])
+            stats_avg = (data_frame[is_server]
+                         .loc[:, ['pxname', 'svname'] + SERVER_AVG_METRICS])
+
+        aggr_sum = (stats_sum
+                    .groupby(['pxname', 'svname'], as_index=False)
+                    .sum())
+        aggr_avg = (stats_avg
+                    .groupby(['pxname', 'svname'], as_index=False)
+                    .mean())
+        merged_stats = pandas.merge(aggr_sum,
+                                    aggr_avg,
+                                    on=['svname', 'pxname'])
+        rows, columns = merged_stats.shape
         cnt_metrics += rows * (columns - 2)
 
-        for _, row in server_merged_stats.iterrows():
+        for _, row in merged_stats.iterrows():
             backend = row[0].replace('.', '_')
             server = row[1].replace('.', '_')
             for i in row[2:].iteritems():
-                data = ("{path}.backend.{backend}.server.{server}.{metric} "
-                        "{value} {time}\n").format(path=self.graphite_path,
-                                                   backend=backend,
-                                                   server=server,
-                                                   metric=i[0],
-                                                   value=i[1],
-                                                   time=self.epoch)
+                data = ("{p}.backend.{b}.server.{s}.{m} {v} {t}\n"
+                        .format(p=self.graphite_path,
+                                b=backend,
+                                s=server,
+                                m=i[0],
+                                v=i[1],
+                                t=self.epoch))
                 dispatcher.signal('send', data=data)
 
         if self.config.getboolean('process', 'aggr-server-metrics'):
             log.info('aggregate stats for servers across all backends')
             # Produce statistics for servers across all backends
-            server_sum_metrics =\
-                data_frame[is_server].loc[:, ['svname'] + SERVER_METRICS]
-            server_avg_metrics =\
-                data_frame[is_server].loc[:, ['svname'] + SERVER_AVG_METRICS]
-            server_sum_values =\
-                server_sum_metrics.groupby(['svname'], as_index=False).sum()
-            server_avg_values =\
-                server_avg_metrics.groupby(['svname'], as_index=False).mean()
-            server_values = pandas.merge(server_sum_values, server_avg_values,
-                                         on=['svname'])
-            rows, columns = server_values.shape
+            stats_sum = (data_frame[is_server]
+                         .loc[:, ['svname'] + SERVER_METRICS])
+            stats_avg = (data_frame[is_server]
+                         .loc[:, ['svname'] + SERVER_AVG_METRICS])
+            aggr_sum = (stats_sum
+                        .groupby(['svname'], as_index=False)
+                        .sum())
+            aggr_avg = (stats_avg
+                        .groupby(['svname'], as_index=False)
+                        .mean())
+            merged_stats = pandas.merge(aggr_sum, aggr_avg, on=['svname'])
+            rows, columns = merged_stats.shape
             cnt_metrics += rows * (columns - 1)  # minus the index
 
-            for _, row in server_values.iterrows():
+            for _, row in merged_stats.iterrows():
                 server = row[0].replace('.', '_')
                 for i in row[1:].iteritems():
-                    data = ("{path}.server.{server}.{metric} {value} "
-                            "{time}\n").format(path=self.graphite_path,
-                                               server=server,
-                                               metric=i[0],
-                                               value=i[1],
-                                               time=self.epoch)
+                    data = ("{p}.server.{s}.{m} {v} {t}\n"
+                            .format(p=self.graphite_path,
+                                    s=server,
+                                    m=i[0],
+                                    v=i[1],
+                                    t=self.epoch))
                     dispatcher.signal('send', data=data)
 
-        data = "{path}.haproxystats.MetricsServer {value} {time}\n".format(
-            path=self.graphite_path, value=cnt_metrics, time=self.epoch)
+        data = ("{p}.haproxystats.MetricsServer {v} {t}\n"
+                .format(p=self.graphite_path,
+                        v=cnt_metrics,
+                        t=self.epoch))
         dispatcher.signal('send', data=data)
 
         log.info('number of server metrics %s', cnt_metrics)

@@ -264,8 +264,9 @@ def supervisor(loop, config, executor):
                     log.info('removing old data file %s', old_file)
                     os.remove(old_file)
             else:
-                msg = "failed to make directory {d}:{e}".format(d=storage_dir,
-                                                                e=exc)
+                msg = ("failed to make directory {d}:{e}"
+                       .format(d=storage_dir,
+                               e=exc))
                 log.critical(msg)
                 log.critical('a fatal error has occurred, exiting..')
                 break
@@ -290,13 +291,15 @@ def supervisor(loop, config, executor):
             try:
                 shutil.move(storage_dir, dst_dir)
             except OSError as exc:
-                log.critical("failed to move %s to %s: %s", storage_dir,
-                             dst_dir, exc)
+                log.critical("failed to move %s to %s: %s",
+                             storage_dir,
+                             dst_dir,
+                             exc)
                 log.critical('a fatal error has occurred, exiting..')
                 break
             else:
-                log.info('statistics are stored in %s', os.path.join(
-                    dst_dir, os.path.basename(storage_dir)))
+                log.info('statistics are stored in %s',
+                         os.path.join(dst_dir, os.path.basename(storage_dir)))
         else:
             log.critical('failed to pull stats')
             log.debug('removing temporary directory %s', storage_dir)
@@ -304,7 +307,8 @@ def supervisor(loop, config, executor):
                 shutil.rmtree(storage_dir)
             except (FileNotFoundError, PermissionError, OSError) as exc:
                 log.error('failed to remove temporary directory %s with:%s',
-                          storage_dir, exc)
+                          storage_dir,
+                          exc)
 
         log.info('wall clock time in seconds: %.3f', time.time() - timestamp)
         # calculate sleep time
@@ -362,14 +366,15 @@ def main():
     except ValueError as exc:
         sys.exit(str(exc))
 
-    loglevel =\
-        config.get('pull', 'loglevel').upper()  # pylint: disable=no-member
+    loglevel = (config.get('pull', 'loglevel')
+                .upper())  # pylint: disable=no-member
     log.setLevel(getattr(logging, loglevel, None))
 
     log.info('haproxystats-pull %s version started', VERSION)
     # Setup our event loop
     loop = asyncio.get_event_loop()
-    executor = ThreadPoolExecutor(max_workers=config.getint('pull', 'workers'))
+    executor = ThreadPoolExecutor(max_workers=config.getint('pull',
+                                                            'workers'))
     # Register shutdown to signals
 
     def shutdown(signalname):
