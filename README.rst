@@ -480,7 +480,7 @@ in environments with hundreds frontends/backends and thousands servers.
 
 * **dir** Defaults to **/var/lib/haproxystats/local-store**
 
-A directory to stores statistics after they have been processed. The correct
+A directory to stores statistics after they have been processed. The current
 format is compatible with Graphite.
 
 Systemd integration
