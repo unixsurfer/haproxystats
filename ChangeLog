@@ -1,6 +1,29 @@
 CHANGES
 =======
 
+0.3.8
+-----
+
+* RELEASE 0.3.8 version
+* Declare failure when zero UNIX socket are found
+* Rephrase various comments and log messages
+* Check queue length when it is safe to do
+* Remove shebang and add vim file encoding
+* Remove '%' prompt character from instructions
+* Move external software under contrib directory
+* Fix a typo in README
+* Add more keywords in setup.cfg
+* Update README
+* Ignore pep8 W503
+* Increase readability of code
+* Remove rst file extension for LICENSE
+* Add rst file extension for LICENSE
+* Update TODO
+* Add missing colons to declare a block
+* Update development instructions in README
+* Add instructions to build a development environemnt
+* Update TODO
+
 0.3.7
 -----
 

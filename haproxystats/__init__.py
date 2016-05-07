@@ -7,7 +7,7 @@ A collection of Python tools to process HAProxy statistics.
 __title__ = 'haproxystats'
 __author__ = 'Pavlos Parissis'
 __license__ = 'Apache 2.0'
-__version__ = '0.3.7'
+__version__ = '0.3.8'
 __copyright__ = 'Copyright 2016 Pavlos Parissis <pavlos.parissis@gmail.com'
 
 DEFAULT_OPTIONS = {
