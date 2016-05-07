@@ -252,8 +252,7 @@ def supervisor(loop, config, executor):
         # from all UNIX sockets.
         storage_dir = os.path.join(tmp_dst_dir, str(int(timestamp)))
 
-        # If our storage directory can't be created we can't do much, thus
-        # abort main program.
+        # Exit if our storage directory can't be created
         try:
             os.makedirs(storage_dir)
         except OSError as exc:

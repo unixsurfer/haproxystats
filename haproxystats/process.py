@@ -86,7 +86,7 @@ class Consumer(multiprocessing.Process):
 
     def run(self):
         """
-        Consume items from queue and process it.
+        Consume item from queue and process it.
 
         It is the target function of Process class. Consumes items from
         the queue, processes data which are pulled down by haproxystats-pull
@@ -95,7 +95,7 @@ class Consumer(multiprocessing.Process):
         It exits when it receives STOP_SIGNAL as item.
 
         To avoid orphan processes on the system, it must be robust against
-        failures and recover from them.
+        failures and try very hard recover from failures.
         """
         if self.config.has_section('local-store'):
             self.local_store = self.config.get('local-store', 'dir')
@@ -182,8 +182,7 @@ class Consumer(multiprocessing.Process):
         Delegate the processing of statistics to other functions
 
         Arguments:
-            pathname (str): A directory pathname where statistics from HAProxy
-            are saved.
+            pathname (str): Directory where statistics from HAProxy are saved.
         """
         # statistics for HAProxy daemon and for frontend/backend/server have
         # different format and haproxystats-pull save them using a different
@@ -197,8 +196,8 @@ class Consumer(multiprocessing.Process):
         files = get_files(pathname, FILE_SUFFIX_STAT)
 
         if not files:
-            log.warning("%s directory doesn't contain any files with HAProxy "
-                        "statistics for sites", pathname)
+            log.warning("%s directory doesn't contain any files with site "
+                        "statistics", pathname)
         else:
             self.sites_stats(files)
 
@@ -245,7 +244,7 @@ class Consumer(multiprocessing.Process):
             cnt_metrics += sums.size + avgs.size
 
             # Pandas did all the hard work, let's join above tables and extract
-            # the statistics
+            # statistics
             for values in pandas.concat([sums, avgs], axis=0).items():
                 data = ("{p}.daemon.{m} {v} {t}\n"
                         .format(p=self.graphite_path,
@@ -588,7 +587,9 @@ class Consumer(multiprocessing.Process):
 
 
 def main():
-    """Parses CLI arguments and launches main program."""
+    """
+    Parse CLI arguments and launches main program
+    """
     args = docopt(__doc__, version=VERSION)
 
     config = ConfigParser(interpolation=ExtendedInterpolation())
@@ -640,7 +641,7 @@ def main():
     log.setLevel(getattr(logging, loglevel, None))
 
     log.info('haproxystats-processs %s version started', VERSION)
-    # process incoming data which were created while processing was stoppped
+    # process incoming data which were retrieved while processing was stopped
     for pathname in glob.iglob(incoming_dir + '/*'):
         if os.path.isdir(pathname):
             log.info('putting %s in queue', pathname)
@@ -660,7 +661,7 @@ def main():
         log.info('received %s at %s', signalnb, frame)
         notifier.stop()
         for _ in range(num_consumers):
-            log.info('sending stop signal to workers')
+            log.info('sending stop signal to worker')
             tasks.put(STOP_SIGNAL)
         log.info('waiting for workers to finish their work')
         for consumer in consumers:
@@ -668,11 +669,11 @@ def main():
         log.info('exiting')
         sys.exit(0)
 
-    # Register our gracefull shutdown to termination signals
+    # Register our graceful shutdown process to termination signals
     signal.signal(signal.SIGHUP, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
-    # Add our watcher.
+    # Add our watcher
     while True:
         try:
             log.info('adding a watch for %s', incoming_dir)

@@ -433,7 +433,7 @@ class FileHandler():
         self._output = None
 
     def open(self):
-        """Build a stringIO object in memory read to be used."""
+        """Build a stringIO object in memory ready to be used."""
         self._input = io.StringIO()
 
     def send(self, **kwargs):
