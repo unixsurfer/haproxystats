@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-branches
 """Processes statistics from HAProxy and pushes them to Graphite

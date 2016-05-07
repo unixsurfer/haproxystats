@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
 """
