@@ -690,39 +690,39 @@ Use a basic HAProxy configuration in multiprocess mode::
 
 Start HAProxy and check it is up::
 
-    % sudo systemctl start haproxy.service;systemctl status -l haproxy.service
+    sudo systemctl start haproxy.service;systemctl status -l haproxy.service
 
 Create a python virtual environment using virtualenvwrapper tool::
 
-    % mkvirtualenv --python=`which python3` haproxystats-dev
+    mkvirtualenv --python=`which python3` haproxystats-dev
 
 **Do not** exit the *haproxystats-dev* virtual environment.
 
 Clone the project, if you are planning to contribute then you should fork it on
 GitHub and clone that project instead::
 
-    % mkdir ~/repo;cd ~/repo
-    % git clone https://github.com/unixsurfer/haproxystats
+    mkdir ~/repo;cd ~/repo
+    git clone https://github.com/unixsurfer/haproxystats
 
 Install necessary libraries::
 
-    % cd haproxystats
-    % pip install -U pbr setuptools
-    % pip install -r ./requirements.txt
+    cd haproxystats
+    pip install -U pbr setuptools
+    pip install -r ./requirements.txt
 
 Start a TCP server which acts a Graphite relay and listens on 127.0.0.1:39991::
 
-    % python3 ./contrib/tcp_server.py
+    python3 ./contrib/tcp_server.py
 
 Install haproxystats::
 
-    % python setup.py install
+    python setup.py install
 
 Create necessary directory structure::
 
-    % mkdir -p ./var/var/lib/haproxystats
-    % mkdir -p ./var/etc
-    % mkdir -p ./var/etc/haproxystats.d
+    mkdir -p ./var/var/lib/haproxystats
+    mkdir -p ./var/etc
+    mkdir -p ./var/etc/haproxystats.d
 
 Adjust the following configuration and save it in ./var/etc/haproxystats.conf::
 
@@ -770,12 +770,12 @@ Adjust the following configuration and save it in ./var/etc/haproxystats.conf::
 
 Start haproxystats-pull and haproxystats-process on 2 different terminals::
 
-    % haproxystats-pull -f var/etc/haproxystats.conf
-    % haproxystats-process -f var/etc/haproxystats.conf
+    haproxystats-pull -f var/etc/haproxystats.conf
+    haproxystats-process -f var/etc/haproxystats.conf
 
 Exit from *haproxystats-dev* virtual environment::
 
-    % deactivate
+    deactivate
 
 **Start hacking and don't forget to make a Pull Request**
 
