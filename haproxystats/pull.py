@@ -167,14 +167,11 @@ def pull_stats(config, storage_dir, loop, executor):
     if int(pull_timeout) == 0:
         pull_timeout = None
 
-    while True:
-        socket_files = [f for f in glob.glob(socket_dir + '/*')
-                        if is_unix_socket(f)]
-        if not socket_files:
-            log.info('found zero socket to connect to, going to sleep for 8s')
-            yield from asyncio.sleep(8)
-        else:
-            break
+    socket_files = [f for f in glob.glob(socket_dir + '/*')
+                    if is_unix_socket(f)]
+    if not socket_files:
+        log.error("found zero UNIX sockets under %s to connect to", socket_dir)
+        return False
 
     log.debug('pull statistics')
     coroutines = [get(socket_file, cmd, storage_dir, loop, executor, config)
