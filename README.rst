@@ -491,7 +491,7 @@ daemonized and they output logging messages to stdout. This is by design as it
 simplifies the code. The daemonenization and logging is off-loaded to systemd
 which has everything we need for that job.
 
-In the root directory of the project there are service files for both programs.
+Under contrib/systend directory there are service files for both programs.
 These are functional systemd Unit files which are used in production.
 
 The order in which these 2 programs start doesn't matter and there isn't any
@@ -520,9 +520,12 @@ program to exit, as it waits for all workers to empty the queue.
 Puppet module
 -------------
 
-A puppet module is available which provides classes for configuring both
-programs. Because haproxystats-process is CPU bound program, CPU Affinity is
-configured using systemd. By default it pins the workers to the last CPUs.
+A puppet module is available under contrib directory which provides classes for
+configuring both programs.
+
+Because haproxystats-process is CPU bound program, CPU Affinity is configured
+using systemd. By default it pins the workers to the last CPUs.
+
 You should take care of pinning haproxy processes to other CPUs in order to
 avoid haproxystats-process *stealing* CPU cycles from haproxy. In production
 servers you usually pin the first 80% of CPUs to haproxy processes and you
@@ -536,7 +539,7 @@ Nagios checks
 -------------
 
 Several nagios checks are provided for monitoring purposes, they can be found
-under nagios directory at the root of the project.
+under contrib/nagios directory.
 
 * check_haproxystats_process_number_of_procs.sh
 
@@ -562,7 +565,7 @@ Monit check
 
 If a child process of haproxystats-process dies then monit can restart
 haproxystats-process. There is a monit check configuration available under
-monit directory which does that.
+contrib/monit directory which does that.
 
 Starting the programs
 ---------------------
@@ -709,7 +712,7 @@ Install necessary libraries::
 
 Start a TCP server which acts a Graphite relay and listens on 127.0.0.1:39991::
 
-    % python3 ./tcp_server.py
+    % python3 ./contrib/tcp_server.py
 
 Install haproxystats::
 
