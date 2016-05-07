@@ -235,16 +235,17 @@ def supervisor(loop, config, executor):
                 if exc.errno != 17:
                     sys.exit("failed to make directory {d}:{e}".format(
                         d=dst_dir, e=exc))
-        if len(queue) >= config.getint('pull', 'queue-size'):
-            log.warning('queue reached max size of %s, pulling statistics is '
-                        'suspended', len(queue))
-            # calculate sleep time
-            sleep = start_offset - time.time() % interval
-            if sleep < 0:
-                sleep += interval
-            log.info('sleeping for %.3fs secs', sleep)
-            time.sleep(sleep)
-            continue
+        else:
+            if len(queue) >= config.getint('pull', 'queue-size'):
+                log.warning("queue reached max size of %s, pulling statistics "
+                            "is suspended", len(queue))
+                # calculate sleep time
+                sleep = start_offset - time.time() % interval
+                if sleep < 0:
+                    sleep += interval
+                log.info('sleeping for %.3fs secs', sleep)
+                time.sleep(sleep)
+                continue
         # HAProxy statistics are stored in a directory and we use retrieval
         # time(seconds since the Epoch) as a name of the directory.
         # We first store them in a temporary place until we receive statistics
