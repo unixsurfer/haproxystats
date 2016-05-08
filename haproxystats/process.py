@@ -69,7 +69,7 @@ class Consumer(multiprocessing.Process):
         self.config = config  # Holds configuration
         self.local_store = None
         self.file_handler = None
-        self.epoch = None  # Points to the timestamp of statistics
+        self.timestamp = None  # The time that statistics were retrieved
 
         # Build graphite path (<namespace>.<hostname>.haproxy)
         graphite_tree = []
@@ -138,14 +138,14 @@ class Consumer(multiprocessing.Process):
                 start_time = time.time()
 
                 # incoming_dir => /var/lib/haproxystats/incoming/1454016646
-                # epoch => 1454016646
-                self.epoch = os.path.basename(incoming_dir)
+                # timestamp => 1454016646
+                self.timestamp = os.path.basename(incoming_dir)
 
                 # update filename for file handler.
                 # This *does not* error if a file handler is not registered.
                 dispatcher.signal('loop',
                                   local_store=self.local_store,
-                                  epoch_time=self.epoch)
+                                  timestamp=self.timestamp)
 
                 self.process_stats(incoming_dir)
 
@@ -168,7 +168,7 @@ class Consumer(multiprocessing.Process):
                         .format(p=self.graphite_path,
                                 m='TotalWallClockTime',
                                 v="{t:.3f}".format(t=elapsed_time),
-                                t=self.epoch))
+                                t=self.timestamp))
                 dispatcher.signal('send', data=data)
                 log.info('finished with %s', incoming_dir)
         except KeyboardInterrupt:
@@ -250,7 +250,7 @@ class Consumer(multiprocessing.Process):
                         .format(p=self.graphite_path,
                                 m=values[0].replace('.', '_'),
                                 v=values[1],
-                                t=self.epoch))
+                                t=self.timestamp))
                 dispatcher.signal('send', data=data)
 
             if self.config.getboolean('process', 'calculate-percentages'):
@@ -262,7 +262,7 @@ class Consumer(multiprocessing.Process):
                             .format(p=self.graphite_path,
                                     m=metric.title,
                                     v=value,
-                                    t=self.epoch))
+                                    t=self.timestamp))
                     dispatcher.signal('send', data=data)
 
             if self.config.getboolean('process', 'per-process-metrics'):
@@ -280,7 +280,7 @@ class Consumer(multiprocessing.Process):
                                         w=worker,
                                         m=values[0].replace('.', '_'),
                                         v=values[1],
-                                        t=self.epoch))
+                                        t=self.timestamp))
                         dispatcher.signal('send', data=data)
 
                 if self.config.getboolean('process', 'calculate-percentages'):
@@ -301,11 +301,13 @@ class Consumer(multiprocessing.Process):
                                                 w=worker,
                                                 m=values[0].replace('.', '_'),
                                                 v=values[1],
-                                                t=self.epoch))
+                                                t=self.timestamp))
                                 dispatcher.signal('send', data=data)
 
             data = ("{p}.haproxystats.MetricsHAProxy {v} {t}\n"
-                    .format(p=self.graphite_path, v=cnt_metrics, t=self.epoch))
+                    .format(p=self.graphite_path,
+                            v=cnt_metrics,
+                            t=self.timestamp))
             dispatcher.signal('send', data=data)
 
             log.info('number of HAProxy metrics %s', cnt_metrics)
@@ -416,13 +418,13 @@ class Consumer(multiprocessing.Process):
                                 f=name,
                                 m=i[0],
                                 v=i[1],
-                                t=self.epoch))
+                                t=self.timestamp))
                 dispatcher.signal('send', data=data)
 
         data = ("{p}.haproxystats.MetricsFrontend {v} {t}\n"
                 .format(p=self.graphite_path,
                         v=cnt_metrics,
-                        t=self.epoch))
+                        t=self.timestamp))
         dispatcher.signal('send', data=data)
         log.info('number of frontend metrics %s', cnt_metrics)
 
@@ -475,13 +477,13 @@ class Consumer(multiprocessing.Process):
                                 b=name,
                                 m=i[0],
                                 v=i[1],
-                                t=self.epoch))
+                                t=self.timestamp))
                 dispatcher.signal('send', data=data)
 
         data = ("{p}.haproxystats.MetricsBackend {v} {t}\n"
                 .format(p=self.graphite_path,
                         v=cnt_metrics,
-                        t=self.epoch))
+                        t=self.timestamp))
         dispatcher.signal('send', data=data)
 
         log.info('number of backend metrics %s', cnt_metrics)
@@ -545,7 +547,7 @@ class Consumer(multiprocessing.Process):
                                 s=server,
                                 m=i[0],
                                 v=i[1],
-                                t=self.epoch))
+                                t=self.timestamp))
                 dispatcher.signal('send', data=data)
 
         if self.config.getboolean('process', 'aggr-server-metrics'):
@@ -573,13 +575,13 @@ class Consumer(multiprocessing.Process):
                                     s=server,
                                     m=i[0],
                                     v=i[1],
-                                    t=self.epoch))
+                                    t=self.timestamp))
                     dispatcher.signal('send', data=data)
 
         data = ("{p}.haproxystats.MetricsServer {v} {t}\n"
                 .format(p=self.graphite_path,
                         v=cnt_metrics,
-                        t=self.epoch))
+                        t=self.timestamp))
         dispatcher.signal('send', data=data)
 
         log.info('number of server metrics %s', cnt_metrics)

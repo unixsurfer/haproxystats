@@ -455,7 +455,7 @@ class FileHandler():
     def loop(self, **kwargs):
         """Rotate the file"""
         base_dir = os.path.join(kwargs.get('local_store'),
-                                kwargs.get('epoch_time'))
+                                kwargs.get('timestamp'))
         try:
             os.makedirs(base_dir)
         except (OSError, PermissionError) as error:
@@ -716,7 +716,7 @@ def send_wlc(output, name):
 
     The decorated method must have the following attributes:
         graphite_path (str): The graphite path to use for storing the metric
-        epoch (int): Time to credit the wallclock time
+        timestamp (int): Time to credit the wallclock time
 
     Arguments:
         output (obj): A dispatcher object which has send method registered
@@ -741,7 +741,7 @@ def send_wlc(output, name):
                     .format(p=getattr(self, 'graphite_path'),
                             m='WallClockTime' + name,
                             v=elapsed_time,
-                            t=getattr(self, 'epoch')))
+                            t=getattr(self, 'timestamp')))
             log.info("wall clock time in seconds for %s %s",
                      func.__name__,
                      elapsed_time)
