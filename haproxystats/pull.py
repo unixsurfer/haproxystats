@@ -98,7 +98,7 @@ def get(socket_file, cmd, storage_dir, loop, executor, config):
 
         attempt -= 1
 
-    if raised:
+    if raised is not None:
         log.error('failed to connect to UNIX socket %s after %s retries',
                   socket_file, retries)
         return False
