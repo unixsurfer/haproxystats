@@ -238,7 +238,13 @@ class Consumer(multiprocessing.Process):
             return
         else:
             # Here is where Pandas enters and starts its magic.
-            dataframe = pandas.DataFrame(raw_info_stats)
+            try:
+                dataframe = pandas.DataFrame(raw_info_stats)
+            except ValueError as exc:
+                log.error('failed to create Pandas object for daemon '
+                          'statistics %s', exc)
+                return
+
             sums = dataframe.loc[:, DAEMON_METRICS].sum()
             avgs = dataframe.loc[:, DAEMON_AVG_METRICS].mean()
             cnt_metrics += sums.size + avgs.size
