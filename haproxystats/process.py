@@ -76,13 +76,11 @@ class Consumer(multiprocessing.Process):
         graphite_tree.append(self.config.get('graphite', 'namespace'))
         if self.config.getboolean('graphite', 'prefix-hostname'):
             if self.config.getboolean('graphite', 'fqdn'):
-                graphite_tree.append(socket.gethostname())
+                graphite_tree.append(socket.gethostname().replace('.', '_'))
             else:
                 graphite_tree.append(socket.gethostname().split('.')[0])
         graphite_tree.append('haproxy')
-        # Make sure we replace dots
-        self.graphite_path = '.'.join([x.replace('.', '_')
-                                       for x in graphite_tree])
+        self.graphite_path = '.'.join(graphite_tree)
 
     def run(self):
         """
