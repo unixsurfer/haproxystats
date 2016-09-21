@@ -523,12 +523,19 @@ class Consumer(multiprocessing.Process):
                          .loc[:, ['pxname', 'svname'] + server_metrics])
             stats_avg = (data_frame[is_server & filter_backend]
                          .loc[:, ['pxname', 'svname'] + SERVER_AVG_METRICS])
+            servers = (data_frame[is_server & filter_backend]
+                       .loc[:, ['pxname', 'svname']])
         else:
             stats_sum = (data_frame[is_server]
                          .loc[:, ['pxname', 'svname'] + server_metrics])
             stats_avg = (data_frame[is_server]
                          .loc[:, ['pxname', 'svname'] + SERVER_AVG_METRICS])
+            servers = data_frame[is_server].loc[:, ['pxname', 'svname']]
 
+        # Calculate the number of configured servers in a backend
+        tot_servers = (servers
+                       .groupby(['pxname'])
+                       .agg({'svname': pandas.Series.nunique}))
         aggr_sum = (stats_sum
                     .groupby(['pxname', 'svname'], as_index=False)
                     .sum())
@@ -540,6 +547,16 @@ class Consumer(multiprocessing.Process):
                                     on=['svname', 'pxname'])
         rows, columns = merged_stats.shape
         cnt_metrics += rows * (columns - 2)
+        for name, row in tot_servers.iterrows():
+            cnt_metrics += 1
+            backend = name.replace('.', '_')
+            data = ("{p}.backend.{b}.{m} {v} {t}\n"
+                    .format(p=self.graphite_path,
+                            b=backend,
+                            m='TotalServers',
+                            v=row[0],
+                            t=self.timestamp))
+            dispatcher.signal('send', data=data)
 
         for _, row in merged_stats.iterrows():
             backend = row[0].replace('.', '_')
