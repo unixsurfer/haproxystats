@@ -863,14 +863,14 @@ Contacts
 **Author**: Pavlos Parissis <pavlos.parissis@gmail.com>
 
 .. _HAProxy: http://www.haproxy.org/
-.. _stats socket: http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#9.2
+.. _stats socket: http://cbonte.github.io/haproxy-dconv/1.6/management.html#9.2
 .. _carbon-c-relay: https://github.com/grobian/carbon-c-relay
 .. _Pandas: http://pandas.pydata.org/
 .. _asyncio: https://docs.python.org/3/library/asyncio.html
 .. _inotify: http://linux.die.net/man/7/inotify
-.. _stat: http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#9.2-show%20stat
-.. _info: http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#9.2-show%20info
+.. _stat: http://cbonte.github.io/haproxy-dconv/1.6/management.html#show%20stat
+.. _info: http://cbonte.github.io/haproxy-dconv/1.6/management.html#show%20info
 .. _pool of threads: https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor
 .. _INI: https://en.wikipedia.org/wiki/INI_file
 .. _carbon-c-relay: https://github.com/grobian/carbon-c-relay
-.. _management: http://www.haproxy.org/download/1.6/doc/management.txt
+.. _management: http://cbonte.github.io/haproxy-dconv/1.6/management.html#9.1
