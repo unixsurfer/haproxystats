@@ -329,7 +329,8 @@ class Consumer(multiprocessing.Process):
         log.debug('processing files %s', ' '.join(files))
         log.debug('merging multiple csv files to one Pandas data frame')
         data_frame = concat_csv(files)
-        filter_backend = None
+        excluded_backends = []
+
         if data_frame is not None:
             # Perform some sanitization on the raw data
             if '# pxname' in data_frame.columns:
@@ -363,13 +364,11 @@ class Consumer(multiprocessing.Process):
                                                     fallback=None)
             if exclude_backends_file is not None:
                 excluded_backends = load_file_content(exclude_backends_file)
-                if excluded_backends:
-                    log.info('excluding backends %s', excluded_backends)
-                    filter_backend = (~data_frame['pxname']
-                                      .isin(excluded_backends))
+                log.info('excluding backends %s', excluded_backends)
+            filter_backend = ~data_frame['pxname'].isin(excluded_backends)
 
-            self.process_backends(data_frame, filter_backend=filter_backend)
-            self.process_servers(data_frame, filter_backend=filter_backend)
+            self.process_backends(data_frame, filter_backend)
+            self.process_servers(data_frame, filter_backend)
             log.info('finished processing statistics for sites')
         else:
             log.error('failed to process statistics for sites')
@@ -386,7 +385,7 @@ class Consumer(multiprocessing.Process):
         cnt_metrics = 1
         log.debug('processing statistics for frontends')
         is_frontend = data_frame['svname'] == 'FRONTEND'
-        filter_frontend = None
+        excluded_frontends = []
         metrics = self.config.get('process', 'frontend-metrics', fallback=None)
 
         if metrics is not None:
@@ -400,16 +399,11 @@ class Consumer(multiprocessing.Process):
                                                  fallback=None)
         if exclude_frontends_file is not None:
             excluded_frontends = load_file_content(exclude_frontends_file)
-            if excluded_frontends:  # in case the file is empty
-                log.info('excluding frontends %s', excluded_frontends)
-                filter_frontend = (~data_frame['pxname']
-                                   .isin(excluded_frontends))
-        if filter_frontend is not None:
-            frontend_stats = (data_frame[is_frontend & filter_frontend]
-                              .loc[:, ['pxname'] + metrics])
-        else:
-            frontend_stats = (data_frame[is_frontend]
-                              .loc[:, ['pxname'] + metrics])
+            log.info('excluding frontends %s', excluded_frontends)
+        filter_frontend = ~data_frame['pxname'].isin(excluded_frontends)
+
+        frontend_stats = (data_frame[is_frontend & filter_frontend]
+                          .loc[:, ['pxname'] + metrics])
 
         # Group by frontend name and sum values for each column
         frontend_aggr_stats = frontend_stats.groupby(['pxname']).sum()
@@ -435,7 +429,7 @@ class Consumer(multiprocessing.Process):
         log.debug('finished processing statistics for frontends')
 
     @send_wlc(output=dispatcher, name='Backends')
-    def process_backends(self, data_frame, *, filter_backend=None):
+    def process_backends(self, data_frame, filter_backend):
         """
         Process statistics for backends.
 
@@ -456,15 +450,10 @@ class Consumer(multiprocessing.Process):
         log.debug('metric names for backends %s', metrics)
         # Get rows only for backends. For some metrics we need the sum and
         # for others the average, thus we split them.
-        if filter_backend is not None:
-            stats_sum = (data_frame[is_backend & filter_backend]
-                         .loc[:, ['pxname'] + metrics])
-            stats_avg = (data_frame[is_backend & filter_backend]
-                         .loc[:, ['pxname'] + BACKEND_AVG_METRICS])
-        else:
-            stats_sum = data_frame[is_backend].loc[:, ['pxname'] + metrics]
-            stats_avg = (data_frame[is_backend]
-                         .loc[:, ['pxname'] + BACKEND_AVG_METRICS])
+        stats_sum = (data_frame[is_backend & filter_backend]
+                     .loc[:, ['pxname'] + metrics])
+        stats_avg = (data_frame[is_backend & filter_backend]
+                     .loc[:, ['pxname'] + BACKEND_AVG_METRICS])
 
         aggr_sum = stats_sum.groupby(['pxname'], as_index=False).sum()
         aggr_avg = stats_avg.groupby(['pxname'], as_index=False).mean()
@@ -494,7 +483,7 @@ class Consumer(multiprocessing.Process):
         log.debug('finished processing statistics for backends')
 
     @send_wlc(output=dispatcher, name='Servers')
-    def process_servers(self, data_frame, *, filter_backend=None):
+    def process_servers(self, data_frame, filter_backend):
         """
         Process statistics for servers.
 
@@ -518,19 +507,12 @@ class Consumer(multiprocessing.Process):
         log.debug('metric names for servers %s', server_metrics)
         # Get rows only for servers. For some metrics we need the sum and
         # for others the average, thus we split them.
-        if filter_backend is not None:
-            stats_sum = (data_frame[is_server & filter_backend]
-                         .loc[:, ['pxname', 'svname'] + server_metrics])
-            stats_avg = (data_frame[is_server & filter_backend]
-                         .loc[:, ['pxname', 'svname'] + SERVER_AVG_METRICS])
-            servers = (data_frame[is_server & filter_backend]
-                       .loc[:, ['pxname', 'svname']])
-        else:
-            stats_sum = (data_frame[is_server]
-                         .loc[:, ['pxname', 'svname'] + server_metrics])
-            stats_avg = (data_frame[is_server]
-                         .loc[:, ['pxname', 'svname'] + SERVER_AVG_METRICS])
-            servers = data_frame[is_server].loc[:, ['pxname', 'svname']]
+        stats_sum = (data_frame[is_server & filter_backend]
+                     .loc[:, ['pxname', 'svname'] + server_metrics])
+        stats_avg = (data_frame[is_server & filter_backend]
+                     .loc[:, ['pxname', 'svname'] + SERVER_AVG_METRICS])
+        servers = (data_frame[is_server & filter_backend]
+                   .loc[:, ['pxname', 'svname']])
 
         # Calculate the number of configured servers in a backend
         tot_servers = (servers
