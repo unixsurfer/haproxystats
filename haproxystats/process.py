@@ -345,6 +345,15 @@ class Consumer(multiprocessing.Process):
                 except ValueError as error:
                     log.warning("failed to drop 'Unnamed: 62' column with: %s",
                                 error)
+            # Sanitize the values for pxname (frontend's/backend's names) and
+            # svname (server's names) columns by replacing dots with
+            # underscores because Graphite uses the dot in the namespace.
+            data_frame['pxname_'] = (data_frame.pxname
+                                     .apply(lambda value:
+                                            value.replace('.', '_')))
+            data_frame['svname_'] = (data_frame.svname
+                                     .apply(lambda value:
+                                            value.replace('.', '_')))
 
             if not isinstance(data_frame, pandas.DataFrame):
                 log.warning('Pandas data frame was not created')
@@ -365,7 +374,7 @@ class Consumer(multiprocessing.Process):
             if exclude_backends_file is not None:
                 excluded_backends = load_file_content(exclude_backends_file)
                 log.info('excluding backends %s', excluded_backends)
-            filter_backend = ~data_frame['pxname'].isin(excluded_backends)
+            filter_backend = ~data_frame['pxname_'].isin(excluded_backends)
 
             self.process_backends(data_frame, filter_backend)
             self.process_servers(data_frame, filter_backend)
@@ -384,7 +393,7 @@ class Consumer(multiprocessing.Process):
         # Filtering for Pandas
         cnt_metrics = 1
         log.debug('processing statistics for frontends')
-        is_frontend = data_frame['svname'] == 'FRONTEND'
+        is_frontend = data_frame['svname_'] == 'FRONTEND'
         excluded_frontends = []
         metrics = self.config.get('process', 'frontend-metrics', fallback=None)
 
@@ -400,20 +409,20 @@ class Consumer(multiprocessing.Process):
         if exclude_frontends_file is not None:
             excluded_frontends = load_file_content(exclude_frontends_file)
             log.info('excluding frontends %s', excluded_frontends)
-        filter_frontend = ~data_frame['pxname'].isin(excluded_frontends)
+        filter_frontend = (~data_frame['pxname_']
+                           .isin(excluded_frontends))
 
         frontend_stats = (data_frame[is_frontend & filter_frontend]
-                          .loc[:, ['pxname'] + metrics])
+                          .loc[:, ['pxname_'] + metrics])
 
         # Group by frontend name and sum values for each column
-        frontend_aggr_stats = frontend_stats.groupby(['pxname']).sum()
+        frontend_aggr_stats = frontend_stats.groupby(['pxname_']).sum()
         cnt_metrics += frontend_aggr_stats.size
         for index, row in frontend_aggr_stats.iterrows():
-            name = index.replace('.', '_')
             for i in row.iteritems():
                 data = ("{p}.frontend.{f}.{m} {v} {t}\n"
                         .format(p=self.graphite_path,
-                                f=name,
+                                f=index,
                                 m=i[0],
                                 v=i[1],
                                 t=self.timestamp))
@@ -440,7 +449,7 @@ class Consumer(multiprocessing.Process):
         cnt_metrics = 1
         log.debug('processing statistics for backends')
         # Filtering for Pandas
-        is_backend = data_frame['svname'] == 'BACKEND'
+        is_backend = data_frame['svname_'] == 'BACKEND'
 
         metrics = self.config.get('process', 'backend-metrics', fallback=None)
         if metrics is not None:
@@ -451,23 +460,22 @@ class Consumer(multiprocessing.Process):
         # Get rows only for backends. For some metrics we need the sum and
         # for others the average, thus we split them.
         stats_sum = (data_frame[is_backend & filter_backend]
-                     .loc[:, ['pxname'] + metrics])
+                     .loc[:, ['pxname_'] + metrics])
         stats_avg = (data_frame[is_backend & filter_backend]
-                     .loc[:, ['pxname'] + BACKEND_AVG_METRICS])
+                     .loc[:, ['pxname_'] + BACKEND_AVG_METRICS])
 
-        aggr_sum = stats_sum.groupby(['pxname'], as_index=False).sum()
-        aggr_avg = stats_avg.groupby(['pxname'], as_index=False).mean()
-        merged_stats = pandas.merge(aggr_sum, aggr_avg, on='pxname')
+        aggr_sum = stats_sum.groupby(['pxname_'], as_index=False).sum()
+        aggr_avg = stats_avg.groupby(['pxname_'], as_index=False).mean()
+        merged_stats = pandas.merge(aggr_sum, aggr_avg, on='pxname_')
 
         rows, columns = merged_stats.shape
         cnt_metrics += rows * (columns - 1)  # minus the index
 
         for _, row in merged_stats.iterrows():
-            name = row[0].replace('.', '_')
             for i in row[1:].iteritems():
                 data = ("{p}.backend.{b}.{m} {v} {t}\n"
                         .format(p=self.graphite_path,
-                                b=name,
+                                b=row[0],
                                 m=i[0],
                                 v=i[1],
                                 t=self.timestamp))
@@ -508,30 +516,29 @@ class Consumer(multiprocessing.Process):
         # Get rows only for servers. For some metrics we need the sum and
         # for others the average, thus we split them.
         stats_sum = (data_frame[is_server & filter_backend]
-                     .loc[:, ['pxname', 'svname'] + server_metrics])
+                     .loc[:, ['pxname_', 'svname_'] + server_metrics])
         stats_avg = (data_frame[is_server & filter_backend]
-                     .loc[:, ['pxname', 'svname'] + SERVER_AVG_METRICS])
+                     .loc[:, ['pxname_', 'svname_'] + SERVER_AVG_METRICS])
         servers = (data_frame[is_server & filter_backend]
-                   .loc[:, ['pxname', 'svname']])
+                   .loc[:, ['pxname_', 'svname_']])
 
         # Calculate the number of configured servers in a backend
         tot_servers = (servers
-                       .groupby(['pxname'])
-                       .agg({'svname': pandas.Series.nunique}))
+                       .groupby(['pxname_'])
+                       .agg({'svname_': pandas.Series.nunique}))
         aggr_sum = (stats_sum
-                    .groupby(['pxname', 'svname'], as_index=False)
+                    .groupby(['pxname_', 'svname_'], as_index=False)
                     .sum())
         aggr_avg = (stats_avg
-                    .groupby(['pxname', 'svname'], as_index=False)
+                    .groupby(['pxname_', 'svname_'], as_index=False)
                     .mean())
         merged_stats = pandas.merge(aggr_sum,
                                     aggr_avg,
-                                    on=['svname', 'pxname'])
+                                    on=['svname_', 'pxname_'])
         rows, columns = merged_stats.shape
         cnt_metrics += rows * (columns - 2)
-        for name, row in tot_servers.iterrows():
+        for backend, row in tot_servers.iterrows():
             cnt_metrics += 1
-            backend = name.replace('.', '_')
             data = ("{p}.backend.{b}.{m} {v} {t}\n"
                     .format(p=self.graphite_path,
                             b=backend,
@@ -541,13 +548,11 @@ class Consumer(multiprocessing.Process):
             dispatcher.signal('send', data=data)
 
         for _, row in merged_stats.iterrows():
-            backend = row[0].replace('.', '_')
-            server = row[1].replace('.', '_')
             for i in row[2:].iteritems():
                 data = ("{p}.backend.{b}.server.{s}.{m} {v} {t}\n"
                         .format(p=self.graphite_path,
-                                b=backend,
-                                s=server,
+                                b=row[0],
+                                s=row[1],
                                 m=i[0],
                                 v=i[1],
                                 t=self.timestamp))
@@ -557,25 +562,24 @@ class Consumer(multiprocessing.Process):
             log.info('aggregate stats for servers across all backends')
             # Produce statistics for servers across all backends
             stats_sum = (data_frame[is_server]
-                         .loc[:, ['svname'] + SERVER_METRICS])
+                         .loc[:, ['svname_'] + SERVER_METRICS])
             stats_avg = (data_frame[is_server]
-                         .loc[:, ['svname'] + SERVER_AVG_METRICS])
+                         .loc[:, ['svname_'] + SERVER_AVG_METRICS])
             aggr_sum = (stats_sum
-                        .groupby(['svname'], as_index=False)
+                        .groupby(['svname_'], as_index=False)
                         .sum())
             aggr_avg = (stats_avg
-                        .groupby(['svname'], as_index=False)
+                        .groupby(['svname_'], as_index=False)
                         .mean())
-            merged_stats = pandas.merge(aggr_sum, aggr_avg, on=['svname'])
+            merged_stats = pandas.merge(aggr_sum, aggr_avg, on=['svname_'])
             rows, columns = merged_stats.shape
             cnt_metrics += rows * (columns - 1)  # minus the index
 
             for _, row in merged_stats.iterrows():
-                server = row[0].replace('.', '_')
                 for i in row[1:].iteritems():
                     data = ("{p}.server.{s}.{m} {v} {t}\n"
                             .format(p=self.graphite_path,
-                                    s=server,
+                                    s=row[0],
                                     m=i[0],
                                     v=i[1],
                                     t=self.timestamp))
