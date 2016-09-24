@@ -141,6 +141,25 @@ An example of graphite namespace::
 
 Stores statistics in the local disk. Use it only for debugging purposes.
 
+Statistics for HAProxy
+######################
+
+In addition the statistics that are exposed by HAProxy, haproxystats provides
+the following statistics.
+
+HAProxy process
+~~~~~~~~~~~~~~~
+
+The following metrics are calculated only when HAProxy is configured with more
+than 1 processes (nbproc > 1)::
+
+    25PercentileCpuIdle 25th percentile of Idle_pct across all processes
+    50PercentileCpuIdle 50th percentile              -//-
+    75PercentileCpuIdle 75th percentile              -//-
+    95PercentileCpuIdle 95th percentile              -//-
+    99PercentileCpuIdle 99th percentile              -//-
+    StdIdle_pct         standard deviation           -//-
+
 Queuing system
 ##############
 

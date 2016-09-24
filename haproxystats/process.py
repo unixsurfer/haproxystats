@@ -257,6 +257,31 @@ class Consumer(multiprocessing.Process):
                                 t=self.timestamp))
                 dispatcher.signal('send', data=data)
 
+            if dataframe.loc[:, 'Idle_pct'].size > 1:
+                log.info('calculating percentiles for Idle_pct')
+                percentiles = (dataframe.loc[:, 'Idle_pct']
+                               .quantile(q=[0.25, 0.50, 0.75, 0.95, 0.99],
+                                         interpolation='nearest'))
+                for per in percentiles.items():
+                    # per[0] = index => [0.25, 0.50, 0.75, 0.95, 0.99]
+                    # per[1] = percentile value
+                    cnt_metrics += 1
+                    data = ("{p}.daemon.{m} {v} {t}\n"
+                            .format(p=self.graphite_path,
+                                    m=("{:.2f}PercentileCpuIdle"
+                                       .format(per[0]).split('.')[1]),
+                                    v=per[1],
+                                    t=self.timestamp))
+                    dispatcher.signal('send', data=data)
+
+                cnt_metrics += 1
+                data = ("{p}.daemon.{m} {v} {t}\n"
+                        .format(p=self.graphite_path,
+                                m="StdIdle_pct",
+                                v=dataframe.loc[:, 'Idle_pct'].std(),
+                                t=self.timestamp))
+                dispatcher.signal('send', data=data)
+
             if self.config.getboolean('process', 'calculate-percentages'):
                 for metric in daemon_percentage_metrics():
                     cnt_metrics += 1
