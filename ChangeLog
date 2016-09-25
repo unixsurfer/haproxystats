@@ -1,11 +1,21 @@
 CHANGES
 =======
 
+0.3.11
+------
+
+* RELEASE 0.3.11 version
+* Compute standard deviation and percentiles for Idle_pct
+* Sanitize values in pxname and svname columns
+* Simplify the way we exclude frontends/backends
+* Add TotalServer metrics for backend, close #4
+* Update URI references for HAProxy documentation
+
 0.3.10
 ------
 
 * RELEASE 0.3.10 version
-* Make sure we cancel get(
+* Make sure we cancel get() coroutine when times out
 
 0.3.9
 -----
