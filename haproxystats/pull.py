@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
-# pylint: disable=no-member
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-branches
@@ -233,8 +232,8 @@ def supervisor(loop, config, executor):
             except OSError as exc:
                 # errno 17 => file exists
                 if exc.errno != 17:
-                    sys.exit("failed to make directory {d}:{e}".format(
-                        d=dst_dir, e=exc))
+                    sys.exit("failed to make directory {d}:{e}"
+                             .format(d=dst_dir, e=exc))
         else:
             if len(queue) >= config.getint('pull', 'queue-size'):
                 log.warning("queue reached max size of %s, pulling statistics "
@@ -264,8 +263,7 @@ def supervisor(loop, config, executor):
                     os.remove(old_file)
             else:
                 msg = ("failed to make directory {d}:{e}"
-                       .format(d=storage_dir,
-                               e=exc))
+                       .format(d=storage_dir, e=exc))
                 log.critical(msg)
                 log.critical('a fatal error has occurred, exiting..')
                 break
@@ -365,8 +363,8 @@ def main():
     except ValueError as exc:
         sys.exit(str(exc))
 
-    loglevel = (config.get('pull', 'loglevel')
-                .upper())  # pylint: disable=no-member
+    loglevel = (config.get('pull', 'loglevel')  # pylint: disable=no-member
+                .upper())
     log.setLevel(getattr(logging, loglevel, None))
 
     log.info('haproxystats-pull %s version started', VERSION)
@@ -411,8 +409,8 @@ def main():
         except OSError as exc:
             # errno 17 => file exists
             if exc.errno != 17:
-                sys.exit("failed to make directory {d}:{e}".format(d=directory,
-                                                                   e=exc))
+                sys.exit("failed to make directory {d}:{e}"
+                         .format(d=directory, e=exc))
     supervisor(loop, config, executor)
 
 # This is the standard boilerplate that calls the main() function.
