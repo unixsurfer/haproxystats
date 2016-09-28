@@ -380,6 +380,9 @@ class Consumer(multiprocessing.Process):
                                      .apply(lambda value:
                                             value.replace('.', '_')))
 
+            data_frame.drop('pxname', axis=1, inplace=True)
+            data_frame.drop('svname', axis=1, inplace=True)
+
             if not isinstance(data_frame, pandas.DataFrame):
                 log.warning('Pandas data frame was not created')
                 return
