@@ -402,6 +402,10 @@ class Consumer(multiprocessing.Process):
             if exclude_backends_file is not None:
                 excluded_backends = load_file_content(exclude_backends_file)
                 log.info('excluding backends %s', excluded_backends)
+                # replace dots in backend names
+                excluded_backends[:] = [x.replace('.', '_')
+                                        for x in excluded_backends]
+
             filter_backend = ~data_frame['pxname_'].isin(excluded_backends)
 
             self.process_backends(data_frame, filter_backend)
@@ -437,6 +441,9 @@ class Consumer(multiprocessing.Process):
         if exclude_frontends_file is not None:
             excluded_frontends = load_file_content(exclude_frontends_file)
             log.info('excluding frontends %s', excluded_frontends)
+            # replace dots in frontend names
+            excluded_frontends[:] = [x.replace('.', '_')
+                                     for x in excluded_frontends]
         filter_frontend = (~data_frame['pxname_']
                            .isin(excluded_frontends))
 
