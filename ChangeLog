@@ -1,6 +1,15 @@
 CHANGES
 =======
 
+0.3.12
+------
+
+* RELEASE 0.3.12 version
+* Fix yet another regression introduced by 9e78b6918
+* Fix indentation issues
+* Drop unused columns to safe memory
+* Fix performance regression introduced by 9e78b6918
+
 0.3.11
 ------
 
