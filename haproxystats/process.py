@@ -497,10 +497,11 @@ class Consumer(multiprocessing.Process):
         cnt_metrics += rows * (columns - 1)  # minus the index
 
         for _, row in merged_stats.iterrows():
+            backend = row[0]
             for i in row[1:].iteritems():
                 data = ("{p}.backend.{b}.{m} {v} {t}\n"
                         .format(p=self.graphite_path,
-                                b=row[0],
+                                b=backend,
                                 m=i[0],
                                 v=i[1],
                                 t=self.timestamp))
@@ -573,11 +574,13 @@ class Consumer(multiprocessing.Process):
             dispatcher.signal('send', data=data)
 
         for _, row in merged_stats.iterrows():
+            backend = row[0]
+            server = row[1]
             for i in row[2:].iteritems():
                 data = ("{p}.backend.{b}.server.{s}.{m} {v} {t}\n"
                         .format(p=self.graphite_path,
-                                b=row[0],
-                                s=row[1],
+                                b=backend,
+                                s=server,
                                 m=i[0],
                                 v=i[1],
                                 t=self.timestamp))
@@ -601,10 +604,11 @@ class Consumer(multiprocessing.Process):
             cnt_metrics += rows * (columns - 1)  # minus the index
 
             for _, row in merged_stats.iterrows():
+                server = row[0]
                 for i in row[1:].iteritems():
                     data = ("{p}.server.{s}.{m} {v} {t}\n"
                             .format(p=self.graphite_path,
-                                    s=row[0],
+                                    s=server,
                                     m=i[0],
                                     v=i[1],
                                     t=self.timestamp))
