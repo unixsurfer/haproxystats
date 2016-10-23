@@ -150,15 +150,21 @@ the following statistics.
 HAProxy process
 ~~~~~~~~~~~~~~~
 
+HAProxy exposes Idle_pct and haproxystats-process converts it to CPU
+utilization without removing Idle_pct metric. This avoids the usage of
+scale(-1) and offset(100) functions on graphite::
+
+    CpuUsagePct  CPU utilization in percentage
+
 The following metrics are calculated only when HAProxy is configured with more
 than 1 processes (nbproc > 1)::
 
-    25PercentileCpuIdle 25th percentile of Idle_pct across all processes
-    50PercentileCpuIdle 50th percentile              -//-
-    75PercentileCpuIdle 75th percentile              -//-
-    95PercentileCpuIdle 95th percentile              -//-
-    99PercentileCpuIdle 99th percentile              -//-
-    StdIdle_pct         standard deviation           -//-
+    25PercentileCpuUsagePct 25th percentile of CpuUsagePct across all processes
+    50PercentileCpuUsagePct 50th percentile              -//-
+    75PercentileCpuUsagePct 75th percentile              -//-
+    95PercentileCpuUsagePct 95th percentile              -//-
+    99PercentileCpuUsagePct 99th percentile              -//-
+    StdCpuUsagePct          standard deviation           -//-
 
 Queuing system
 ##############

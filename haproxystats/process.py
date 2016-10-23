@@ -257,9 +257,11 @@ class Consumer(multiprocessing.Process):
                                 t=self.timestamp))
                 dispatcher.signal('send', data=data)
 
+            dataframe['CpuUsagePct'] = (dataframe.loc[:, 'Idle_pct']
+                                        .map(lambda x: (x * -1) + 100))
             if dataframe.loc[:, 'Idle_pct'].size > 1:
-                log.info('calculating percentiles for Idle_pct')
-                percentiles = (dataframe.loc[:, 'Idle_pct']
+                log.info('calculating percentiles for CpuUsagePct')
+                percentiles = (dataframe.loc[:, 'CpuUsagePct']
                                .quantile(q=[0.25, 0.50, 0.75, 0.95, 0.99],
                                          interpolation='nearest'))
                 for per in percentiles.items():
@@ -268,7 +270,7 @@ class Consumer(multiprocessing.Process):
                     cnt_metrics += 1
                     data = ("{p}.daemon.{m} {v} {t}\n"
                             .format(p=self.graphite_path,
-                                    m=("{:.2f}PercentileCpuIdle"
+                                    m=("{:.2f}PercentileCpuUsagePct"
                                        .format(per[0]).split('.')[1]),
                                     v=per[1],
                                     t=self.timestamp))
@@ -277,8 +279,8 @@ class Consumer(multiprocessing.Process):
                 cnt_metrics += 1
                 data = ("{p}.daemon.{m} {v} {t}\n"
                         .format(p=self.graphite_path,
-                                m="StdIdle_pct",
-                                v=dataframe.loc[:, 'Idle_pct'].std(),
+                                m="StdCpuUsagePct",
+                                v=dataframe.loc[:, 'CpuUsagePct'].std(),
                                 t=self.timestamp))
                 dispatcher.signal('send', data=data)
 
@@ -298,7 +300,7 @@ class Consumer(multiprocessing.Process):
                 log.info("processing statistics per daemon")
                 indexed_by_worker = dataframe.set_index('Process_num')
                 metrics_per_worker = (indexed_by_worker
-                                      .loc[:, DAEMON_METRICS +
+                                      .loc[:, DAEMON_METRICS + ['CpuUsagePct'] +
                                            DAEMON_AVG_METRICS])
                 cnt_metrics += metrics_per_worker.size
 
