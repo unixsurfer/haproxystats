@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.3.13
+------
+
+* RELEASE 0.3.13 version
+* Convert Idle_pct to CpuUsagePct
+
 0.3.12
 ------
 
