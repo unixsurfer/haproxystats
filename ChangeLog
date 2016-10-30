@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.3.14
+------
+
+* RELEASE 0.3.14 version
+* Fix wrong calculation for Uptime_sec
+
 0.3.13
 ------
 
