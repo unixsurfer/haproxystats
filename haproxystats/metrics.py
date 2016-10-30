@@ -45,11 +45,10 @@ DAEMON_METRICS = [
     'SslRateLimit',
     'Tasks',
     'Ulimit-n',
-    'Uptime_sec',
     'ZlibMemUsage',
 ]
 
-DAEMON_AVG_METRICS = ['Idle_pct']
+DAEMON_AVG_METRICS = ['Idle_pct', 'Uptime_sec']
 
 COMMON = [
     'bin',
