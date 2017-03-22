@@ -1,10 +1,7 @@
-"""
-haproxstats.metrics
-~~~~~~~~~~~~~~~~~~
+"""Provide constants for grouping metric names.
 
-This module provides constants for grouping metric names per frontend, backend,
-servers and haproxy daemon. Metric names are the field names contained in the
-HAProxy statistics.
+There are seperated groups for frontend, backend, servers and haproxy daemon.
+Metric names are the field names contained in the HAProxy statistics.
 """
 from collections import namedtuple
 

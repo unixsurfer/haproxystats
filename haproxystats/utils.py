@@ -2,13 +2,7 @@
 # vim:fenc=utf-8
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
-"""
-haproxstats.utils
-~~~~~~~~~~~~~~~~~~
-
-This module provides functions, constants and classes that are used within
-haproxystats.
-"""
+"""Provide functions, constants and classes that are used by haproxystats."""
 import os
 import stat
 from collections import defaultdict, deque
@@ -77,9 +71,8 @@ OPTIONS_TYPE = {
 
 
 class BrokenConnection(Exception):
-    """
-    A wrapper of all possible exception during a TCP connect
-    """
+    """A wrapper of all possible exception during a TCP connect."""
+
     def __init__(self, raised):
         self.raised = raised
 
@@ -87,8 +80,7 @@ class BrokenConnection(Exception):
 
 
 def load_file_content(filename):
-    """
-    Build list from the content of a file
+    """Build list from the content of a file.
 
     Arguments:
         filename (str): A absolute path of a filename
@@ -148,8 +140,7 @@ def concat_csv(csv_files):
 
 
 def get_files(path, suffix):
-    """
-    Return the filenames from a directory which match a suffix
+    """Return the filenames from a directory which match a suffix.
 
     Arguments:
         path (str): Pathname
@@ -171,8 +162,7 @@ def retry_on_failures(retries=3,
                                   ConnectionAbortedError, BrokenPipeError,
                                   OSError),
                       exception_to_raise=BrokenConnection):
-    """
-    A decorator which implements a retry logic.
+    """A decorator which implements a retry logic.
 
     Arguments:
         retries (int): Maximum times to retry
@@ -194,9 +184,7 @@ def retry_on_failures(retries=3,
             func (obj): A function to decorate
         """
         def decorated_func(*args, **kwargs):
-            """
-            Retry decorated functions.
-            """
+            """Retry decorated functions."""
             backoff_interval = interval
             raised = None
             attempt = 0  # times to attempt a connect after a failure
@@ -232,27 +220,24 @@ def retry_on_failures(retries=3,
 
 
 class Dispatcher(object):
-    """
-    Dispatch data to different handlers
-    """
+    """Dispatch data to different handlers."""
+
     def __init__(self):
         self.handlers = defaultdict(list)
 
     def register(self, signal, callback):
-        """
-        Register a callback to a signal
+        """Register a callback to a signal.
 
         Multiple callbacks can be assigned to the same signal.
 
         Arguments:
             signal (str): The name of the signal
             callbacl (obj): A callable object to call for the given signal.
-       """
+        """
         self.handlers[signal].append(callback)
 
     def unregister(self, signal, callback):
-        """
-        Unregister a callback to a signal
+        """Unregister a callback to a signal.
 
         Arguments:
             signal (str): The name of the signal
@@ -265,8 +250,7 @@ class Dispatcher(object):
                       callback, signal)
 
     def signal(self, signal, **kwargs):
-        """
-        Run registered handlers
+        """Run registered handlers.
 
         Arguments:
             signal (str): A registered signal
@@ -277,8 +261,7 @@ class Dispatcher(object):
 
 
 class GraphiteHandler():
-    """
-    A handler to send data to graphite.
+    """A handler to send data to graphite.
 
     Arguments:
         server (str): Server name or IP address.
@@ -290,7 +273,8 @@ class GraphiteHandler():
         delay (float): Time to delay a connection attempt after last failure
         backoff (float): Multiply interval by this factor after each failure
         queue_size (int): Maximum size of the queue
-        """
+    """
+
     def __init__(self,
                  server,
                  port=3002,
@@ -340,7 +324,7 @@ class GraphiteHandler():
 
     @property
     def connect(self):
-        """A convenient wrapper so we can pass arguments to decorator"""
+        """A convenient wrapper so we can pass arguments to decorator."""
         @retry_on_failures(retries=self.retries,
                            interval=self.interval,
                            backoff=self.backoff,
@@ -403,7 +387,7 @@ class GraphiteHandler():
                 continue
 
     def close(self, **kwargs):  # pylint: disable=unused-argument
-        """Close TCP connection to graphite relay"""
+        """Close TCP connection to graphite relay."""
         log.info('closing connection to %s on port %s', self.server, self.port)
         log.info('TCP info: %s', self.connection)
         try:
@@ -425,9 +409,8 @@ dispatcher = Dispatcher()  # pylint: disable=I0011,C0103
 
 
 class FileHandler():
-    """
-    A handler to write data to a file
-    """
+    """A handler to write data to a file."""
+
     def __init__(self):
         self._input = None
         self._output = None
@@ -437,7 +420,7 @@ class FileHandler():
         self._input = io.StringIO()
 
     def send(self, **kwargs):
-        """Write data to a file-like object"""
+        """Write data to a file-like object."""
         self._input.write(kwargs.get('data'))
 
     def set_path(self, filepath):
@@ -453,7 +436,7 @@ class FileHandler():
             log.error('failed to create %s: %s', filepath, error)
 
     def loop(self, **kwargs):
-        """Rotate the file"""
+        """Rotate the file."""
         base_dir = os.path.join(kwargs.get('local_store'),
                                 kwargs.get('timestamp'))
         try:
@@ -465,7 +448,7 @@ class FileHandler():
         self.set_path(filepath=os.path.join(base_dir, 'stats'))
 
     def flush(self, **kwargs):  # pylint: disable=unused-argument
-        """Flush data to disk"""
+        """Flush data to disk."""
         self._input.seek(0)
         try:
             shutil.copyfileobj(self._input, self._output)
@@ -479,19 +462,19 @@ class FileHandler():
 
 
 class EventHandler(pyinotify.ProcessEvent):
-    """
-    An event handler for inotify to push items to a queue.
+    """An event handler for inotify to push items to a queue.
 
     If the event isn't for a directory no action is taken.
 
     Arguments:
         tasks (queue obj): A queue to put items.
     """
+
     def my_init(self, tasks):  # pylint: disable=arguments-differ
         self.tasks = tasks
 
     def _put_item_to_queue(self, pathname):
-        """Add item to queue if and only if the pathname is a directory"""
+        """Add item to queue if and only if the pathname is a directory."""
         if os.path.isdir(pathname):
             log.info('putting %s in queue', pathname)
             self.tasks.put(pathname)
@@ -499,19 +482,18 @@ class EventHandler(pyinotify.ProcessEvent):
             log.info("ignore %s as it isn't directory", pathname)
 
     def process_IN_CREATE(self, event):  # pylint: disable=C0103
-        """Invoked when a directory is created"""
+        """Invoked when a directory is created."""
         log.debug('received an event for CREATE')
         self._put_item_to_queue(event.pathname)
 
     def process_IN_MOVED_TO(self, event):  # pylint: disable=C0103
-        """Invoked when a directory/file is moved"""
+        """Invoked when a directory/file is moved."""
         log.debug('received an event for MOVE')
         self._put_item_to_queue(event.pathname)
 
 
 def configuration_check(config, section):
-    """
-    Perform a sanity check on configuration
+    """Perform a sanity check on configuration.
 
     Arguments:
         config (obg): A configparser object which holds our configuration.
@@ -552,8 +534,7 @@ def configuration_check(config, section):
 
 
 def check_metrics(config):
-    """
-    Check if metrics set by user are valid
+    """Check if metrics set by user are valid.
 
     Arguments:
         config (obg): A configparser object which holds our configuration.
@@ -582,8 +563,7 @@ def check_metrics(config):
 
 
 def read_write_access(directory):
-    """
-    Check if read/write access is granted on a directory
+    """Check if read/write access is granted on a directory.
 
     Arguments:
         directory (str): Directory name
@@ -608,9 +588,10 @@ def read_write_access(directory):
 
 
 def daemon_percentage_metrics():
-    """
-    Build a list of namedtuples which holds metric names for HAProxy
-    daemon for which we calculate a percentage.
+    """Build a list of namedtuples.
+
+    Those namedtuples hold metric names for HAProxy daemon for which we
+    calculate a percentage.
     """
     _list = []
     _list.append(MetricNamesPercentage(name='CurrConns',
@@ -630,8 +611,7 @@ def daemon_percentage_metrics():
 
 
 def calculate_percentage_per_row(row, metric):
-    """
-    Calculate the percentage per row for 2 columns
+    """Calculate the percentage per row for 2 columns.
 
     It selects per row 2 columns, metric.name and metric.limit, out of the
     dataframe and then calculate the percentage.
@@ -676,8 +656,7 @@ def calculate_percentage_per_row(row, metric):
 
 
 def calculate_percentage_per_column(dataframe, metric):
-    """
-    Calculate the percentage against 2 Pandas Series
+    """Calculate the percentage against 2 Pandas Series.
 
     It selects 2 columns, metric.name and metric.limit, out of the dataframe,
     sums the values per column and then calculate the percentage.
@@ -711,8 +690,7 @@ def calculate_percentage_per_column(dataframe, metric):
 
 
 def send_wlc(output, name):
-    """
-    A decorator to send to graphite the wall clock time of a method
+    """A decorator to send to graphite the wall clock time of a method.
 
     The decorated method must have the following attributes:
         graphite_path (str): The graphite path to use for storing the metric
@@ -723,17 +701,14 @@ def send_wlc(output, name):
         name (str): A name to append to the metric.
     """
     def decorated(func):
-        """
-        The real decorator.
+        """The real decorator.
 
         Arguments:
             func (obj): A function to decorate
         """
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            """
-            Time the execution of decorated function
-            """
+            """Time the execution of decorated function."""
             start_time = time.time()
             result = func(self, *args, **kwargs)
             elapsed_time = '{t:.3f}'.format(t=time.time() - start_time)

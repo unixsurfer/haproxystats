@@ -5,7 +5,7 @@
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-locals
 #
-"""Pulls statistics from HAProxy daemon over UNIX socket(s)
+"""Pulls statistics from HAProxy daemon over UNIX socket(s).
 
 Usage:
     haproxystats-pull [-f <file> ] [-p | -P]
@@ -328,7 +328,7 @@ def supervisor(loop, config, executor):
 
 
 def main():
-    """Parse CLI arguments and launch main program"""
+    """Parse CLI arguments and launch main program."""
     args = docopt(__doc__, version=VERSION)
 
     config = ConfigParser(interpolation=ExtendedInterpolation())
@@ -375,7 +375,7 @@ def main():
     # Register shutdown to signals
 
     def shutdown(signalname):
-        """Performs a clean shutdown
+        """Perform a clean shutdown.
 
         Arguments:
             signalname (str): Signal name
@@ -412,6 +412,7 @@ def main():
                 sys.exit("failed to make directory {d}:{e}"
                          .format(d=directory, e=exc))
     supervisor(loop, config, executor)
+
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':

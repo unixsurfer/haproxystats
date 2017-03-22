@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-"""
-A collection of Python tools to process HAProxy statistics.
-"""
+"""A collection of Python tools to process HAProxy statistics."""
 __title__ = 'haproxystats'
 __author__ = 'Pavlos Parissis'
 __license__ = 'Apache 2.0'
