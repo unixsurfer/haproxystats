@@ -344,7 +344,7 @@ class GraphiteHandler():
         return _create_connection
 
     def send(self, **kwargs):
-        """Send data to graphite relay"""
+        """Send data to graphite relay."""
         self.dqueue.appendleft(kwargs.get('data'))
 
         while len(self.dqueue) != 0:
@@ -366,6 +366,11 @@ class GraphiteHandler():
                     log.warning('%s secs since last failure', self.delay)
                     log.info('TCP info: %s', self.connection)
                     self.timer = None
+
+                    if len(self.dqueue) == self.dqueue.maxlen:
+                        log.critical("graphite dispatcher queue is full, old "
+                                     "metrics will be dropped")
+
                     if not isinstance(exc, AttributeError):
                         self.close()
                     else:
