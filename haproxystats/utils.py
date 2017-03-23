@@ -378,6 +378,7 @@ class GraphiteHandler():
                     self.open()
                 return
             except OSError as exc:
+                self.dqueue.appendleft(item)
                 # Unclear under which conditions we may get OSError
                 log.warning('caught %s while sending data to graphite', exc)
                 log.info('TCP info: %s', self.connection)
