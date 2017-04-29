@@ -513,7 +513,7 @@ Systemd integration
 
 haproxystats-pull and haproxystats-process are simple programs which are not
 daemonized and they output logging messages to stdout. This is by design as it
-simplifies the code. The daemonenization and logging is off-loaded to systemd
+simplifies the code. The daemonization and logging is off-loaded to systemd
 which has everything we need for that job.
 
 Under contrib/systend directory there are service files for both programs.
