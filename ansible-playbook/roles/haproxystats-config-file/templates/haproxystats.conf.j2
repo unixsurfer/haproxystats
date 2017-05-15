@@ -1,0 +1,43 @@
+[DEFAULT]
+loglevel = info
+retries  = 2
+timeout  = 1
+interval = 2
+
+[paths]
+base-dir = /home/haproxystats
+
+[pull]
+loglevel        = info
+socket-dir      = {{ haproxy_socket_dir }}
+retries         = 1
+timeout         = 0.1
+interval        = 0.5
+pull-timeout    = 2
+pull-interval   = 10
+dst-dir         = ${paths:base-dir}/incoming
+tmp-dst-dir     = ${paths:base-dir}/incoming.tmp
+workers         = {{ pull_workers }}
+queue-size      = 360
+
+[process]
+src-dir             = ${paths:base-dir}/incoming
+workers             = {{ process_workers }}
+per-process-metrics = false
+
+[graphite]
+server          = {{ graphite_server }}
+port            = {{ graphite_port }}
+retries         = 3
+interval        = 1.8
+connect-timeout = 1.0
+write-timeout   = 1.0
+delay           = 10
+backoff         = 2
+namespace       = loadbalancers
+prefix-hostname = true
+fqdn            = true
+queue-size      = 1000000
+
+#[local-store]
+#dir = ${paths:base-dir}/local-store

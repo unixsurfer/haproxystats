@@ -1,0 +1,6 @@
+---
+- name: set permission for haproxy socket directory
+  file:
+    path: "{{ haproxy_socket_dir }}"
+    state: directory
+    mode: 0770
