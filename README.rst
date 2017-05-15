@@ -823,29 +823,29 @@ Build a source archive for manual installation::
 
    python setup.py sdist
 
-Use Ansible Playbook::
+Use Ansible Playbook:
 
-For Deploy haproxystats By Ansible Playbook go to ansible-playbook Directory.
+For Deploy haproxystats By Ansible Playbook go to ansible-playbook Directory::
 
-  cd ansible-playbook
+   cd ansible-playbook
+   
+Then enter your haproxy server IP Address in hosts file::
 
-  Then enter your haproxy server IP Address in hosts file.
+   vi hosts
 
-    vi hosts
+After that set Information Of Your Environment in varible File::
 
-After that set Information Of Your Environment in varible File.
+   vi group_vars/all
 
-  vi group_vars/all
+Now for Run Ansible Playbook use this command::
 
-Now for Run Ansible Playbook use this command :
+   ansible-playbook -i hosts main-playbook.yml
 
-  ansible-playbook -i hosts main-playbook.yml
+When Ansible Playbook Run successful completely, You Can Take Control haproxystats-pull and haproxystats-process By systemd::
 
-When Ansible Playbook Run successful completely, You Can Take Control haproxystats-pull and haproxystats-process By systemd.
+   systemctl start haproxystats-pull.service
 
-  systemctl start haproxystats-pull.service
-
-  systemctl start haproxystats-process.service
+   systemctl start haproxystats-process.service
 
 
 How to make a release
