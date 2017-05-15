@@ -1,0 +1,5 @@
+---
+- name : install haproxystats with pip 3
+  pip:
+    name: haproxystats
+    executable: pip3

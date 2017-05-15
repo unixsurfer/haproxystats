@@ -1,0 +1,11 @@
+---
+- name : install or update epel repo
+  yum: name=epel-release state=latest
+
+- name : install python 3.4 and pip 3 packages
+  yum:
+    pkg: "{{ item }}"
+    state: latest
+  with_items:
+    - python34
+    - python34-pip
