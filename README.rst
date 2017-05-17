@@ -560,6 +560,12 @@ module enforces this logic.
 haproxystats-pull is a single threaded program which doesn't use a lot of CPU
 cycles and by default is assigned to the last CPU.
 
+Ansible Playbook
+----------------
+
+A Ansible playbook is available under contrib directory. For installation
+instruction of the playbook please read Installation chapter of this document.
+
 Nagios checks
 -------------
 
@@ -825,10 +831,11 @@ Build a source archive for manual installation::
 
 Use Ansible Playbook:
 
-For Deploy haproxystats By Ansible Playbook go to ansible-playbook Directory::
+For Deploy haproxystats By Ansible Playbook go to contrib/ansible-playbook
+Directory::
 
    cd ansible-playbook
-   
+
 Then enter your haproxy server IP Address in hosts file::
 
    vi hosts
