@@ -60,6 +60,7 @@ COMMON = [
     'rate',
     'rate_max',
     'scur',
+    'slim',
     'smax',
     'stot'
 ]
@@ -93,7 +94,6 @@ BACKEND_METRICS = [
     'lbtot',
     'qcur',
     'qmax',
-    'slim',
     'srv_abrt',
     'wredis',
     'wretr',
@@ -119,8 +119,7 @@ FRONTEND_METRICS = [
     'rate_lim',
     'req_rate',
     'req_rate_max',
-    'req_tot',
-    'slim'
+    'req_tot'
 ] + COMMON
 
 MetricNamesPercentage = namedtuple('MetricsNamesPercentage',
