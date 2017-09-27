@@ -67,6 +67,7 @@ COMMON = [
 
 SERVER_METRICS = [
     'chkfail',
+    'chkdown',
     'cli_abrt',
     'econ',
     'eresp',
