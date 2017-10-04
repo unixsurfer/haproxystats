@@ -1,6 +1,22 @@
 CHANGES
 =======
 
+0.3.15
+------
+
+* RELEASE 0.3.15 version
+* Add dcon and dses in the list of FRONTEND_METRICS
+* Add ctime in the list of SERVER_AVG_METRICS
+* Add chkdown in the list of server metrics
+* Add `slim` to server metrics, in addition to frontends and backends
+* Mention in README about ansible and move code under contrib
+* fix update readme file
+* - Add Ansible Playbook For Fast Deploy haproxystats On CentOS 7.x - Update README File
+* Fix a typo in README.rst
+* Place metric back in the queue in case of OSError exc
+* Log a message when graphite dispatcher queue is full
+* Make docstrings compatible with EP257
+
 0.3.14
 ------
 
