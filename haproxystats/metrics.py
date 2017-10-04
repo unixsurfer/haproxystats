@@ -79,7 +79,7 @@ SERVER_METRICS = [
     'wretr'
 ] + COMMON
 
-SERVER_AVG_METRICS = ['qtime', 'rtime', 'throttle', 'ttime', 'weight']
+SERVER_AVG_METRICS = ['ctime', 'qtime', 'rtime', 'throttle', 'ttime', 'weight']
 
 BACKEND_METRICS = [
     'chkdown',
