@@ -115,6 +115,8 @@ FRONTEND_METRICS = [
     'comp_in',
     'comp_out',
     'comp_rsp',
+    'dcon',
+    'dses',
     'dreq',
     'ereq',
     'rate_lim',
