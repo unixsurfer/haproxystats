@@ -891,7 +891,7 @@ How to make a release
       twine upload -s -p  dist/*
 
 
-Contributers
+Contributors
 ------------
 
 The following people have contributed to project with feedback and code reviews
