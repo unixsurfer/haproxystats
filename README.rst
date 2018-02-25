@@ -291,9 +291,33 @@ The directory to use as the base of the directory structure.
 pull section
 ############
 
-* **socket-dir** Defaults to **/run/haproxy**
+* **socket-dir** Unset by default
 
 A directory with HAProxy socket files.
+
+* **servers** Unset by default
+
+A list of servers to pull statistics from. You define a server by passing a URL,
+here some examples::
+
+    tcp://127.0.0.1:5555
+    tcp://foo.bar.com:4444
+    tcp://[fe80::3f2f:46b3:ef0c:a420]:4444
+    unix:///run/haproxy.sock
+
+Only TCP and UNIX schemas are supported and the port for TCP servers **must**
+be set. For UNIX scheme you can only pass a file and not a directory, but
+**socket-dir** option can be set as well, so you can use a directory and UNIX
+socket files at the same time. You can use comma as separator to pass multiple
+servers::
+
+    servers = unix:///run/haproxy.sock,tcp://127.0.0.1:555,tcp://127.0.0.1:556
+
+* **buffer-limit** Defaults to **6291456** (bytes)
+
+At most size bytes are read and returned from the sockets. Setting too low and
+it will slow down the retrieval of statistics.
+Only values greater than or equal to 1 are accepted.
 
 * **retries** Defaults to **1**
 

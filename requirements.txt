@@ -1,3 +1,4 @@
 docopt>=0.6.1
 pandas>=0.17.1
 pyinotify>=0.9.6
+yarl

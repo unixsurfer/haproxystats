@@ -5,7 +5,7 @@
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-locals
 #
-"""Pulls statistics from HAProxy daemon over UNIX socket(s).
+"""Pulls statistics from HAProxy daemon over UNIX/TCP socket(s).
 
 Usage:
     haproxystats-pull [-f <file> ] [-p | -P]
@@ -31,6 +31,7 @@ from configparser import ConfigParser, ExtendedInterpolation, ParsingError
 import copy
 import glob
 from docopt import docopt
+from yarl import URL
 
 from haproxystats import __version__ as VERSION
 from haproxystats import DEFAULT_OPTIONS
@@ -45,16 +46,18 @@ CMDS = ['show info', 'show stat']
 
 
 @asyncio.coroutine
-def get(socket_file, cmd, storage_dir, loop, executor, config):
+def get(socket_name, cmd, storage_dir, loop, executor, config):
     """
-    Fetch data from a UNIX socket.
+    Fetch data from a UNIX and TCP socket.
 
-    Sends a command to HAProxy over UNIX socket, reads the response and then
-    offloads the writing of the received data to a thread, so we don't block
-    this coroutine.
+    Sends a command to HAProxy over UNIX/TCP socket, reads the response and
+    then offloads the writing of the received data to a thread, so we don't
+    block this coroutine.
 
     Arguments:
-        socket_file (str): The full path of the UNIX socket file to connect to.
+        socket_name (str or tuple): Either the full path of the UNIX socket
+        or a tuple with two elements, where 1st element is the host and the
+        second is the port.
         cmd (str): The command to send.
         storage_dir (str): The full path of the directory to save the response.
         loop (obj): A base event loop from asyncio module.
@@ -62,16 +65,24 @@ def get(socket_file, cmd, storage_dir, loop, executor, config):
         config (obj): A configParser object which holds configuration.
 
     Returns:
-        True if statistics from a UNIX sockets are saved False otherwise.
+        True if statistics from a UNIX/TCP sockets are saved False otherwise.
     """
-    # try to connect to the UNIX socket
-    log.debug('connecting to UNIX socket %s', socket_file)
     retries = config.getint('pull', 'retries')
     timeout = config.getfloat('pull', 'timeout')
     interval = config.getfloat('pull', 'interval')
+    limit = config.getint('pull', 'buffer-limit')
     attempt = 0  # times to attempt a connect after a failure
     raised = None
 
+    if isinstance(socket_name, str):
+        socket_type = 'UNIX'
+        address = socket_name
+    elif isinstance(socket_name, tuple):
+        host, port = socket_name
+        address = "{h}:{p}".format(h=host, p=port)
+        socket_type = 'TCP'
+
+    log.debug('connecting to %s socket %s', socket_type, address)
     if retries == -1:
         attempt = -1  # -1 means retry indefinitely
     elif retries == 0:
@@ -80,43 +91,60 @@ def get(socket_file, cmd, storage_dir, loop, executor, config):
         attempt = retries + 1  # any other value means retry N times
     while attempt != 0:
         if raised:  # an exception was raised sleep before the next retry
-            log.error('caught "%s" when connecting to UNIX socket %s, '
+            log.error('caught "%s" when connecting to %s socket %s, '
                       'remaining tries %s, sleeping for %.2f seconds',
-                      raised, socket_file, attempt, interval)
+                      raised, socket_type, address, attempt, interval)
             yield from asyncio.sleep(interval)
         try:
-            connect = asyncio.open_unix_connection(socket_file)
+            if socket_type == 'UNIX':
+                connect = asyncio.open_unix_connection(address, limit=limit)
+            else:
+                connect = asyncio.open_connection(host=host,
+                                                  port=port,
+                                                  limit=limit)
             reader, writer = yield from asyncio.wait_for(connect, timeout)
         except (ConnectionRefusedError, PermissionError, asyncio.TimeoutError,
                 OSError) as exc:
             raised = exc
         else:
-            log.debug('connection established to UNIX socket %s', socket_file)
+            log.debug('connection established to %s socket %s',
+                      socket_type,
+                      address)
             raised = None
             break
 
         attempt -= 1
 
     if raised is not None:
-        log.error('failed to connect to UNIX socket %s after %s retries',
-                  socket_file, retries)
+        log.error('failed to connect to %s socket %s after %s retries',
+                  socket_type, address, retries)
         return False
     else:
-        log.debug('connection established to UNIX socket %s', socket_file)
+        log.debug('connection established to %s socket %s',
+                  socket_type, address)
 
-    log.debug('sending command "%s" to UNIX socket %s', cmd, socket_file)
+    log.debug('sending command "%s" to %s socket %s',
+              cmd,
+              socket_type,
+              address)
     writer.write('{c}\n'.format(c=cmd).encode())
     data = yield from reader.read()
     writer.close()
 
-    if len(data) == 0:
+    data_size = len(data)
+    if data_size == 0:
         log.critical('received zero data')
         return False
 
-    log.debug('received data from UNIX socket %s', socket_file)
+    log.debug('received %s bytes from %s socket %s',
+              data_size, socket_type, address)
 
     suffix = CMD_SUFFIX_MAP.get(cmd.split()[1])
-    filename = os.path.basename(socket_file) + suffix
+    if socket_type == 'UNIX':
+        filename = os.path.basename(address) + suffix
+    elif socket_type == 'TCP':
+        filename = address + suffix
+
     filename = os.path.join(storage_dir, filename)
     log.debug('going to save data to %s', filename)
     # Offload the writing to a thread so we don't block ourselves.
@@ -146,7 +174,7 @@ def get(socket_file, cmd, storage_dir, loop, executor, config):
 @asyncio.coroutine
 def pull_stats(config, storage_dir, loop, executor):
     """
-    Launch coroutines for pulling statistics from UNIX sockets.
+    Launch coroutines for pulling statistics from UNIX/TCP sockets.
 
     This a delegating routine.
 
@@ -157,24 +185,40 @@ def pull_stats(config, storage_dir, loop, executor):
         executor(obj): A ThreadPoolExecutor object.
 
     Returns:
-        True if statistics from *all* UNIX sockets are fetched False otherwise.
+        True if statistics from all sockets are fetched False otherwise.
     """
-    # absolute directory path which contains UNIX socket files.
     results = []  # stores the result of finished tasks
-    socket_dir = config.get('pull', 'socket-dir')
+    sockets = []
     pull_timeout = config.getfloat('pull', 'pull-timeout')
     if int(pull_timeout) == 0:
         pull_timeout = None
 
-    socket_files = [f for f in glob.glob(socket_dir + '/*')
-                    if is_unix_socket(f)]
-    if not socket_files:
-        log.error("found zero UNIX sockets under %s to connect to", socket_dir)
+    if config.has_option('pull', 'socket-dir'):
+        socket_dir = config.get('pull', 'socket-dir')
+        socket_files = [f for f in glob.glob(socket_dir + '/*')
+                        if is_unix_socket(f)]
+        if not socket_files:
+            log.error("found zero UNIX sockets under %s to connect to",
+                      socket_dir)
+        else:
+            sockets.extend(socket_files)
+
+    if config.has_option('pull', 'servers'):
+        servers = config.get('pull', 'servers').strip(',').split(',')
+        for server in servers:
+            url = URL(server.strip())
+            if url.scheme == 'unix':
+                sockets.append(url.path)
+            elif url.scheme == 'tcp':
+                sockets.append((url.host, url.port))
+
+    if not sockets:
+        log.error("found zero UNIX and TCP sockets")
         return False
 
     log.debug('pull statistics')
-    coroutines = [get(socket_file, cmd, storage_dir, loop, executor, config)
-                  for socket_file in socket_files
+    coroutines = [get(socket_name, cmd, storage_dir, loop, executor, config)
+                  for socket_name in sockets
                   for cmd in CMDS]
     # Launch all connections.
     done, pending = yield from asyncio.wait(coroutines,
@@ -201,10 +245,10 @@ def pull_stats(config, storage_dir, loop, executor):
 
 def supervisor(loop, config, executor):
     """
-    Coordinate the pulling of HAProxy statistics from UNIX sockets.
+    Coordinate the pulling of HAProxy statistics from UNIX/TCP sockets.
 
     This is the client routine which launches requests to all HAProxy
-    UNIX sockets for retrieving statistics and save them to file-system.
+    UNIX/TCP sockets for retrieving statistics and save them to file-system.
     It runs indefinitely until main program is terminated.
 
     Arguments:
@@ -248,7 +292,7 @@ def supervisor(loop, config, executor):
         # HAProxy statistics are stored in a directory and we use retrieval
         # time(seconds since the Epoch) as a name of the directory.
         # We first store them in a temporary place until we receive statistics
-        # from all UNIX sockets.
+        # from all UNIX/TCP sockets.
         storage_dir = os.path.join(tmp_dst_dir, str(int(timestamp)))
 
         # Exit if our storage directory can't be created

@@ -19,12 +19,12 @@ DEFAULT_OPTIONS = {
         'base-dir': '/var/lib/haproxystats',
     },
     'pull': {
-        'socket-dir': '/run/haproxy',
         'retries': '1',
         'timeout': '0.1',
         'interval': '0.5',
         'pull-timeout': '2',
         'pull-interval': '10',
+        'buffer-limit': '6291456',
         'dst-dir': '/var/lib/haproxystats/incoming',
         'tmp-dst-dir': '/var/lib/haproxystats/incoming.tmp',
         'workers': '8',

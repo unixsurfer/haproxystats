@@ -17,6 +17,7 @@ import glob
 import re
 import pyinotify
 import pandas
+from yarl import URL
 
 from haproxystats.metrics import MetricNamesPercentage
 
@@ -32,12 +33,12 @@ OPTIONS_TYPE = {
     },
     'pull': {
         'loglevel': 'get',
-        'socket-dir': 'get',
         'retries': 'getint',
         'timeout': 'getfloat',
         'interval': 'getfloat',
         'pull-timeout': 'getfloat',
         'pull-interval': 'getint',
+        'buffer-limit': 'getint',
         'dst-dir': 'get',
         'tmp-dst-dir': 'get',
         'workers': 'getint',
@@ -68,6 +69,10 @@ OPTIONS_TYPE = {
         'dir': 'get',
     },
 }
+VALID_TCP_SOCKETS = [
+    'tcp',
+    'unix',
+]
 
 
 class BrokenConnection(Exception):
@@ -524,9 +529,9 @@ def configuration_check(config, section):
         try:
             getattr(config, getter)(section, option)
         except (configparser.Error, ValueError) as exc:
-            # For some errors ConfigParser mention section/option names and
+            # For some errors ConfigParser mentions section/option names and
             # for others not. We want for all possible errors to mention
-            # section andoption names in order to make the life of our user
+            # section and option names in order to make the life of our user
             # easier.
             if 'section' not in str(exc):
                 raise ValueError("invalid configuration, section:'{s}' "
@@ -537,6 +542,60 @@ def configuration_check(config, section):
             else:
                 raise ValueError("invalid configuration, error:{e}"
                                  .format(e=str(exc)))
+
+    # asyncio.StreamReader does not accept a value less than 1.
+    if config.getint('pull', 'buffer-limit') < 1:
+        raise ValueError("invalid configuration, you can set a value less "
+                         "than 1 for 'buffer-limit' option of 'pull'section")
+
+    if config.has_option('pull', 'socket-dir'):
+        try:
+            socket_dir = config.get('pull', 'socket-dir')
+        except (configparser.Error, ValueError) as exc:
+            raise ValueError("invalid configuration, error:{e}"
+                             .format(e=str(exc)))
+        else:
+            if not socket_dir:
+                raise ValueError("invalid configuration, no value for option "
+                                 "'socket-dir'")
+
+    if config.has_option('pull', 'servers'):
+        try:
+            servers = config.get('pull', 'servers').split(',')
+        except (configparser.Error, ValueError) as exc:
+            raise ValueError("invalid configuration, error:{e}"
+                             .format(e=str(exc)))
+        else:
+            if len(servers) == 1 and not servers[0]:
+                raise ValueError("invalid configuration, no value for option "
+                                 "'servers' in the section 'pull'")
+            for server in servers:
+                server = server.strip()
+                if not server:
+                    raise ValueError("invalid configuration, invalid value for"
+                                     " 'servers' option of 'pull' section")
+                try:
+                    url = URL(server)
+                except ValueError as exc:
+                    raise ValueError("invalid configuration, failed to parse "
+                                     "'servers' option of 'pull' section, "
+                                     "error:{e}".format(e=str(exc)))
+                else:
+                    if url.scheme not in VALID_TCP_SOCKETS:
+                        raise ValueError("invalid configuration, only unix and"
+                                         " tcp type of servers are supported "
+                                         "in 'servers' option of 'pull' "
+                                         "section")
+
+                    if url.scheme == 'tcp' and not url.port:
+                        raise ValueError("invalid configuration, port is not "
+                                         "set in 'servers' option of 'pull' "
+                                         "section")
+
+                    if url.scheme == 'unix' and not url.path:
+                        raise ValueError("invalid configuration, path is not "
+                                         "set in 'servers' option of 'pull' "
+                                         "section")
 
 
 def check_metrics(config):
