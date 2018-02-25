@@ -2,6 +2,7 @@
 # vim:fenc=utf-8
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-branches
 """Provide functions, constants and classes that are used by haproxystats."""
 import os
 import stat
