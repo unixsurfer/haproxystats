@@ -522,6 +522,7 @@ def configuration_check(config, section):
 
     Returns:
         None if all checks are successful.
+
     """
     loglevel = config[section]['loglevel']
     num_level = getattr(logging, loglevel.upper(), None)
