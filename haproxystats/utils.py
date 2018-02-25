@@ -576,33 +576,52 @@ def configuration_check(config, section):
             if len(servers) == 1 and not servers[0]:
                 raise ValueError("invalid configuration, no value for option "
                                  "'servers' in the section 'pull'")
-            for server in servers:
-                server = server.strip()
-                if not server:
-                    raise ValueError("invalid configuration, invalid value for"
-                                     " 'servers' option of 'pull' section")
-                try:
-                    url = URL(server)
-                except ValueError as exc:
-                    raise ValueError("invalid configuration, failed to parse "
-                                     "'servers' option of 'pull' section, "
-                                     "error:{e}".format(e=str(exc)))
-                else:
-                    if url.scheme not in VALID_TCP_SOCKETS:
-                        raise ValueError("invalid configuration, only unix and"
-                                         " tcp type of servers are supported "
-                                         "in 'servers' option of 'pull' "
-                                         "section")
+            configuration_check_for_servers(servers)
 
-                    if url.scheme == 'tcp' and not url.port:
-                        raise ValueError("invalid configuration, port is not "
-                                         "set in 'servers' option of 'pull' "
-                                         "section")
 
-                    if url.scheme == 'unix' and not url.path:
-                        raise ValueError("invalid configuration, path is not "
-                                         "set in 'servers' option of 'pull' "
-                                         "section")
+def configuration_check_for_servers(servers, option='servers', section='pull'):
+    """Perform a sanity check against the values for servers.
+
+    Arguments:
+        servers (list): A list of servers.
+        option (str): The name of the option they belong to.
+        section (str): The name of the section the option is part of
+
+    Raises:
+        ValueError on the first occureance of invalid configuration
+
+    Returns:
+        None if all checks are successful.
+
+    """
+    for server in servers:
+        server = server.strip()
+        if not server:
+            raise ValueError("invalid configuration, invalid value for '{o}' "
+                             "option of '{s}' section"
+                             .format(o=option, s=section))
+        try:
+            url = URL(server)
+        except ValueError as exc:
+            raise ValueError("invalid configuration, failed to parse '{o}' "
+                             "option of '{s}' section, error:{e}"
+                             .format(e=str(exc), o=option, s=section))
+        else:
+            if url.scheme not in VALID_TCP_SOCKETS:
+                raise ValueError("invalid configuration, only unix and tcp "
+                                 "type of servers are supported set in '{o}' "
+                                 "option of '{s}' section"
+                                 .format(o=option, s=section))
+
+            if url.scheme == 'tcp' and not url.port:
+                raise ValueError("invalid configuration, port is not set in "
+                                 "'{o}' option of '{s}' section"
+                                 .format(o=option, s=section))
+
+            if url.scheme == 'unix' and not url.path:
+                raise ValueError("invalid configuration, path is not set in "
+                                 "'{o}' option of '{s}' section"
+                                 .format(o=option, s=section))
 
 
 def check_metrics(config):
