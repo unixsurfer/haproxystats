@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-branches
-"""Processes statistics from HAProxy and pushes them to Graphite
+"""Processes statistics from HAProxy and pushes them to Graphite.
 
 Usage:
     haproxystats-process [-f <file> ] [-p | -P]
@@ -60,13 +59,18 @@ STOP_SIGNAL = 'STOP'
 
 
 class Consumer(multiprocessing.Process):
-    """
-    Process statistics and dispatch them to handlers.
-    """
+    """Process statistics and dispatch them to handlers."""
+
     def __init__(self, tasks, config):
+        """Initialization.
+
+        Arguments:
+            tasks (queue): A queue from which we consume items.
+            config (obj): A configParser object which holds configuration.
+        """
         multiprocessing.Process.__init__(self)
-        self.tasks = tasks  # A queue to consume items
-        self.config = config  # Holds configuration
+        self.tasks = tasks
+        self.config = config
         self.local_store = None
         self.file_handler = None
         self.timestamp = None  # The time that statistics were retrieved
@@ -83,8 +87,7 @@ class Consumer(multiprocessing.Process):
         self.graphite_path = '.'.join(graphite_tree)
 
     def run(self):
-        """
-        Consume item from queue and process it.
+        """Consume item from queue and process it.
 
         It is the target function of Process class. Consumes items from
         the queue, processes data which are pulled down by haproxystats-pull
@@ -176,8 +179,7 @@ class Consumer(multiprocessing.Process):
 
     @send_wlc(output=dispatcher, name='AllStats')
     def process_stats(self, pathname):
-        """
-        Delegate the processing of statistics to other functions
+        """Delegate the processing of statistics to other functions.
 
         Arguments:
             pathname (str): Directory where statistics from HAProxy are saved.
@@ -201,8 +203,7 @@ class Consumer(multiprocessing.Process):
 
     @send_wlc(output=dispatcher, name='HAProxy')
     def haproxy_stats(self, files):
-        """
-        Process statistics for HAProxy daemon.
+        """Process statistics for HAProxy daemon.
 
         Arguments:
             files (list): A list of files which contain the output of 'show
@@ -345,8 +346,7 @@ class Consumer(multiprocessing.Process):
             log.info('finished processing statistics for HAProxy daemon')
 
     def sites_stats(self, files):
-        """
-        Process statistics for frontends/backends/servers.
+        """Process statistics for frontends/backends/servers.
 
         Arguments:
             files (list): A list of files which contain the output of 'show
@@ -418,8 +418,7 @@ class Consumer(multiprocessing.Process):
 
     @send_wlc(output=dispatcher, name='Frontends')
     def process_frontends(self, data_frame):
-        """
-        Process statistics for frontends.
+        """Process statistics for frontends.
 
         Arguments:
             data_frame (obj): A pandas data_frame ready for processing.
@@ -476,8 +475,7 @@ class Consumer(multiprocessing.Process):
 
     @send_wlc(output=dispatcher, name='Backends')
     def process_backends(self, data_frame, filter_backend):
-        """
-        Process statistics for backends.
+        """Process statistics for backends.
 
         Arguments:
             data_frame (obj): A pandas data_frame ready for processing.
@@ -530,8 +528,7 @@ class Consumer(multiprocessing.Process):
 
     @send_wlc(output=dispatcher, name='Servers')
     def process_servers(self, data_frame, filter_backend):
-        """
-        Process statistics for servers.
+        """Process statistics for servers.
 
         Arguments:
             data_frame (obj): A pandas data_frame ready for processing.
@@ -637,9 +634,7 @@ class Consumer(multiprocessing.Process):
 
 
 def main():
-    """
-    Parse CLI arguments and launches main program
-    """
+    """Parse CLI arguments and launches main program."""
     args = docopt(__doc__, version=VERSION)
 
     config = ConfigParser(interpolation=ExtendedInterpolation())
@@ -698,8 +693,7 @@ def main():
             tasks.put(pathname)
 
     def shutdown(signalnb=None, frame=None):
-        """
-        Signal processes to exit
+        """Signal processes to exit.
 
         It adds STOP_SIGNAL to the queue, which causes processes to exit in a
         clean way.
@@ -742,6 +736,7 @@ def main():
 
     log.info('watching %s directory for incoming data', incoming_dir)
     notifier.loop(daemonize=False)
+
 
 if __name__ == '__main__':
     main()
