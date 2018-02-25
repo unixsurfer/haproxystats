@@ -80,6 +80,7 @@ class BrokenConnection(Exception):
     """A wrapper of all possible exception during a TCP connect."""
 
     def __init__(self, raised):
+        """Initilaztion."""
         self.raised = raised
 
         super().__init__()
@@ -93,6 +94,7 @@ def load_file_content(filename):
 
     Returns:
         A list
+
     """
     commented = re.compile(r'\s*?#')
     try:
@@ -107,14 +109,14 @@ def load_file_content(filename):
 
 
 def is_unix_socket(path):
-    """
-    Check if path is a valid UNIX socket.
+    """Check if path is a valid UNIX socket.
 
     Arguments:
         path (str): A file name path
 
     Returns:
         True if path is a valid UNIX socket otherwise False.
+
     """
     mode = os.stat(path).st_mode
 
@@ -122,14 +124,14 @@ def is_unix_socket(path):
 
 
 def concat_csv(csv_files):
-    """
-    Perform a concatenation along several csv files.
+    """Perform a concatenation along several csv files.
 
     Arguments:
         csv_files (lst): A list of csv files.
 
     Returns:
         A pandas data frame object or None if fails to parse csv_files
+
     """
     data_frames = []
     for csv_file in csv_files:
@@ -154,6 +156,7 @@ def get_files(path, suffix):
 
     Returns:
         A list of filenames
+
     """
     files = [filename
              for filename in glob.glob(path + '/*{s}'.format(s=suffix))]
@@ -168,7 +171,7 @@ def retry_on_failures(retries=3,
                                   ConnectionAbortedError, BrokenPipeError,
                                   OSError),
                       exception_to_raise=BrokenConnection):
-    """A decorator which implements a retry logic.
+    """Perform a retry logic when an exception is raised by the decorated func.
 
     Arguments:
         retries (int): Maximum times to retry
@@ -183,8 +186,7 @@ def retry_on_failures(retries=3,
     it raises one of the specified exceptions.
     """
     def dec(func):
-        """
-        The real decorator.
+        """Decorator.
 
         Arguments:
             func (obj): A function to decorate
@@ -229,6 +231,7 @@ class Dispatcher(object):
     """Dispatch data to different handlers."""
 
     def __init__(self):
+        """Initilaztion."""
         self.handlers = defaultdict(list)
 
     def register(self, signal, callback):
@@ -291,6 +294,7 @@ class GraphiteHandler():
                  delay=4,
                  backoff=2,
                  queue_size=1000000):
+        """Initilaztion."""
         self.server = server
         self.port = port
         self.retries = retries
@@ -330,7 +334,7 @@ class GraphiteHandler():
 
     @property
     def connect(self):
-        """A convenient wrapper so we can pass arguments to decorator."""
+        """Wrap connection so we can pass arguments to decorator."""
         @retry_on_failures(retries=self.retries,
                            interval=self.interval,
                            backoff=self.backoff,
@@ -424,6 +428,7 @@ class FileHandler():
     """A handler to write data to a file."""
 
     def __init__(self):
+        """Initilaztion."""
         self._input = None
         self._output = None
 
@@ -483,6 +488,7 @@ class EventHandler(pyinotify.ProcessEvent):
     """
 
     def my_init(self, tasks):  # pylint: disable=arguments-differ
+        """Initilaztion."""
         self.tasks = tasks
 
     def _put_item_to_queue(self, pathname):
@@ -494,12 +500,12 @@ class EventHandler(pyinotify.ProcessEvent):
             log.info("ignore %s as it isn't directory", pathname)
 
     def process_IN_CREATE(self, event):  # pylint: disable=C0103
-        """Invoked when a directory is created."""
+        """Add an item to the queue when a directory is created."""
         log.debug('received an event for CREATE')
         self._put_item_to_queue(event.pathname)
 
     def process_IN_MOVED_TO(self, event):  # pylint: disable=C0103
-        """Invoked when a directory/file is moved."""
+        """Add an item to the queue when a directory/file is moved."""
         log.debug('received an event for MOVE')
         self._put_item_to_queue(event.pathname)
 
@@ -610,6 +616,7 @@ def check_metrics(config):
 
     Returns:
         None if all checks are successful.
+
     """
     for metric_type in ['server', 'frontend', 'backend']:
         option = '{t}-metrics'.format(t=metric_type)
@@ -639,6 +646,7 @@ def read_write_access(directory):
 
     Returns:
         None if read/write access is granted
+
     """
     check_file = os.path.join(directory, '.read_write_check')
     try:
@@ -709,6 +717,7 @@ def calculate_percentage_per_row(row, metric):
 
     Returns:
         A Pandas Series with percentage as integer
+
     """
     if row[metric.limit] == 0:
         return pandas.Series({metric.title: 0})
@@ -746,6 +755,7 @@ def calculate_percentage_per_column(dataframe, metric):
 
     Returns:
         A percentage as integer
+
     """
     _sum = dataframe.loc[:, [metric.name]].sum()[0]
     _sum_limit = dataframe.loc[:, [metric.limit]].sum()[0]
@@ -756,7 +766,7 @@ def calculate_percentage_per_column(dataframe, metric):
 
 
 def send_wlc(output, name):
-    """A decorator to send to graphite the wall clock time of a method.
+    """Send to graphite the wall clock time of the decorated  method.
 
     The decorated method must have the following attributes:
         graphite_path (str): The graphite path to use for storing the metric
@@ -767,7 +777,7 @@ def send_wlc(output, name):
         name (str): A name to append to the metric.
     """
     def decorated(func):
-        """The real decorator.
+        """Decorator.
 
         Arguments:
             func (obj): A function to decorate
