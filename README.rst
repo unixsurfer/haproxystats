@@ -63,7 +63,7 @@ haproxystats-pull
 
 haproxystats-pull leverages the `asyncio`_ framework from Python by utilizing
 coroutines to multiplex I/O access over several `stats socket`_, which are
-simple UNIX sockets.
+simple UNIX and TCP sockets.
 
 The actual task of storing the data to the file system is off-loaded to a very
 light `pool of threads`_ in order to avoid blocking the coroutines during the
@@ -266,19 +266,19 @@ Log level to use, possible values are: debug, info, warning, error, critical
 * **retries** Defaults to **2**
 
 Number of times to retry a connection after a failure. Used by haproxystats-pull
-and haproxystats-process when they open a connection to a UNIX socket and
+and haproxystats-process when they open a connection to a UNIX/TCP socket and
 Graphite respectively.
 
 * **timeout** Defaults to **1** (seconds)
 
 Time to wait for establishing a connection. Used by haproxystats-pull and
-haproxystats-process when they open a connection to a UNIX socket and Graphite
+haproxystats-process when they open a connection to a UNIX/TCP socket and Graphite
 respectively.
 
 * **interval** Defaults to **2**
 
 Time to wait before trying to open a connection. Used by haproxystats-pull and
-haproxystats-process when they retry a connection to a UNIX socket and Graphite
+haproxystats-process when they retry a connection to a UNIX/TCP socket and Graphite
 respectively.
 
 paths section
@@ -305,7 +305,7 @@ here some examples::
     tcp://[fe80::3f2f:46b3:ef0c:a420]:4444
     unix:///run/haproxy.sock
 
-Only TCP and UNIX schemas are supported and the port for TCP servers **must**
+Only TCP and UNIX schemes are supported and the port for TCP servers **must**
 be set. For UNIX scheme you can only pass a file and not a directory, but
 **socket-dir** option can be set as well, so you can use a directory and UNIX
 socket files at the same time. You can use comma as separator to pass multiple
@@ -321,16 +321,16 @@ Only values greater than or equal to 1 are accepted.
 
 * **retries** Defaults to **1**
 
-Number of times to reconnect to UNIX socket after a failure.
+Number of times to reconnect to UNIX/TCP socket after a failure.
 
 * **timeout** Defaults to **0.1** (seconds)
 
-Time to wait for establishing a connection to UNIX socket. There is no need to
+Time to wait for establishing a connection to UNIX/TCP socket. There is no need to
 set it higher than few ms as haproxy accepts a connection within 1-2ms.
 
 * **interval** Defaults to **0.5** (seconds)
 
-Time to wait before trying to reconnect to UNIX socket after a failure. Tune it
+Time to wait before trying to reconnect to UNIX/TCP socket after a failure. Tune it
 based on the duration of the reload process of haproxy. haproxy reloads within
 few ms but in some environments with hundreds different SSL certificates it can
 take a bit more.
