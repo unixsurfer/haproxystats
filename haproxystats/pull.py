@@ -228,11 +228,11 @@ def pull_stats(config, storage_dir, loop, executor):
         log.debug('task status: %s', task)
         results.append(task.result())
 
-    log.debug('task report, done:%s pending:%s succeed:%s failed:%s',
-              len(done),
-              len(pending),
-              results.count(True),
-              results.count(False))
+    log.info('task report, done:%s pending:%s succeed:%s failed:%s',
+             len(done),
+             len(pending),
+             results.count(True),
+             results.count(False))
 
     for task in pending:
         log.warning('cancelling task %s as it reached its timeout threshold of'
