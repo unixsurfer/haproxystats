@@ -143,8 +143,8 @@ def concat_csv(csv_files):
             data_frames.append(data_frame)
     if data_frames:
         return pandas.concat(data_frames)
-    else:
-        return None
+
+    return None
 
 
 def get_files(path, suffix):
@@ -780,8 +780,8 @@ def calculate_percentage_per_column(dataframe, metric):
     _sum_limit = dataframe.loc[:, [metric.limit]].sum()[0]
     if _sum_limit == 0:
         return 0
-    else:
-        return int(100 * _sum / _sum_limit)
+
+    return int(100 * _sum / _sum_limit)
 
 
 def send_wlc(output, name):
