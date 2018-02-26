@@ -16,9 +16,9 @@ import time
 import configparser
 import glob
 import re
+from urllib.parse import urlparse
 import pyinotify
 import pandas
-from yarl import URL
 
 from haproxystats.metrics import MetricNamesPercentage
 
@@ -602,7 +602,7 @@ def configuration_check_for_servers(servers, option='servers', section='pull'):
                              "option of '{s}' section"
                              .format(o=option, s=section))
         try:
-            url = URL(server)
+            url = urlparse(server)
         except ValueError as exc:
             raise ValueError("invalid configuration, failed to parse '{o}' "
                              "option of '{s}' section, error:{e}"

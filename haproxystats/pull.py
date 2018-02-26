@@ -30,8 +30,8 @@ from functools import partial
 from configparser import ConfigParser, ExtendedInterpolation, ParsingError
 import copy
 import glob
+from urllib.parse import urlparse
 from docopt import docopt
-from yarl import URL
 
 from haproxystats import __version__ as VERSION
 from haproxystats import DEFAULT_OPTIONS
@@ -206,11 +206,11 @@ def pull_stats(config, storage_dir, loop, executor):
     if config.has_option('pull', 'servers'):
         servers = config.get('pull', 'servers').strip(',').split(',')
         for server in servers:
-            url = URL(server.strip())
+            url = urlparse(server.strip())
             if url.scheme == 'unix':
                 sockets.append(url.path)
             elif url.scheme == 'tcp':
-                sockets.append((url.host, url.port))
+                sockets.append((url.hostname, url.port))
 
     if not sockets:
         log.error("found zero UNIX and TCP sockets")
