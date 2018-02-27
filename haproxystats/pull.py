@@ -47,8 +47,7 @@ CMDS = ['show info', 'show stat']
 
 @asyncio.coroutine
 def get(socket_name, cmd, storage_dir, loop, executor, config):
-    """
-    Fetch data from a UNIX and TCP socket.
+    """Fetch data from a UNIX and TCP socket.
 
     Sends a command to HAProxy over UNIX/TCP socket, reads the response and
     then offloads the writing of the received data to a thread, so we don't
@@ -66,6 +65,7 @@ def get(socket_name, cmd, storage_dir, loop, executor, config):
 
     Returns:
         True if statistics from a UNIX/TCP sockets are saved False otherwise.
+
     """
     retries = config.getint('pull', 'retries')
     timeout = config.getfloat('pull', 'timeout')
@@ -150,11 +150,11 @@ def get(socket_name, cmd, storage_dir, loop, executor, config):
     # Offload the writing to a thread so we don't block ourselves.
 
     def write_file():
-        """
-        Write data to a file.
+        """Write data to a file.
 
         Returns:
             True if succeeds False otherwise.
+
         """
         try:
             with open(filename, 'w') as file_handle:
@@ -173,8 +173,7 @@ def get(socket_name, cmd, storage_dir, loop, executor, config):
 
 @asyncio.coroutine
 def pull_stats(config, storage_dir, loop, executor):
-    """
-    Launch coroutines for pulling statistics from UNIX/TCP sockets.
+    """Launch coroutines for pulling statistics from UNIX/TCP sockets.
 
     This a delegating routine.
 
@@ -186,6 +185,7 @@ def pull_stats(config, storage_dir, loop, executor):
 
     Returns:
         True if statistics from all sockets are fetched False otherwise.
+
     """
     results = []  # stores the result of finished tasks
     sockets = []
@@ -244,8 +244,7 @@ def pull_stats(config, storage_dir, loop, executor):
 
 
 def supervisor(loop, config, executor):
-    """
-    Coordinate the pulling of HAProxy statistics from UNIX/TCP sockets.
+    """Coordinate the pulling of HAProxy statistics from UNIX/TCP sockets.
 
     This is the client routine which launches requests to all HAProxy
     UNIX/TCP sockets for retrieving statistics and save them to file-system.
