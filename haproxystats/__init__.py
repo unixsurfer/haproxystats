@@ -10,9 +10,9 @@ __copyright__ = 'Copyright 2016 Pavlos Parissis <pavlos.parissis@gmail.com'
 
 DEFAULT_OPTIONS = {
     'DEFAULT': {
-        'retries': '2',
-        'timeout': '1',
-        'interval': '2',
+        'retries': 2,
+        'timeout': 1,
+        'interval': 2,
         'loglevel': 'info',
     },
     'paths': {
