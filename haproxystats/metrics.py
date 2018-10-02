@@ -92,6 +92,7 @@ BACKEND_METRICS = [
     'dreq',
     'econ',
     'eresp',
+    'intercepted',
     'lbtot',
     'qcur',
     'qmax',
@@ -103,7 +104,6 @@ BACKEND_METRICS = [
 BACKEND_AVG_METRICS = [
     'act',
     'bck',
-    'intercepted',
     'rtime',
     'ctime',
     'qtime',
