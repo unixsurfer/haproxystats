@@ -289,13 +289,18 @@ class Consumer(multiprocessing.Process):
                 for metric in daemon_percentage_metrics():
                     cnt_metrics += 1
                     log.info('calculating percentage for %s', metric.name)
-                    value = calculate_percentage_per_column(dataframe, metric)
-                    data = ("{p}.daemon.{m} {v} {t}\n"
-                            .format(p=self.graphite_path,
-                                    m=metric.title,
-                                    v=value,
-                                    t=self.timestamp))
-                    dispatcher.signal('send', data=data)
+                    try:
+                        value = calculate_percentage_per_column(dataframe,
+                                                                metric)
+                    except KeyError:
+                        log.warning("metric %s doesn't exist", metric.name)
+                    else:
+                        data = ("{p}.daemon.{m} {v} {t}\n"
+                                .format(p=self.graphite_path,
+                                        m=metric.title,
+                                        v=value,
+                                        t=self.timestamp))
+                        dispatcher.signal('send', data=data)
 
             if self.config.getboolean('process', 'per-process-metrics'):
                 log.info("processing statistics per daemon")
