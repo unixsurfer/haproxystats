@@ -855,24 +855,24 @@ Build a source archive for manual installation::
 
 Use Ansible Playbook:
 
-For Deploy haproxystats By Ansible Playbook go to contrib/ansible-playbook
-Directory::
+To deploy haproxystats By Ansible Playbook go to contrib/ansible-playbook
+directory::
 
-   cd ansible-playbook
+   cd contrib/ansible-playbook
 
-Then enter your haproxy server IP Address in hosts file::
+Then enter your haproxy server IP address in hosts file::
 
    vi hosts
 
-After that set Information Of Your Environment in varible File::
+After that set information of your environment in variable file::
 
    vi group_vars/all
 
-Now for Run Ansible Playbook use this command::
+Now for run Ansible Playbook use this command::
 
    ansible-playbook -i hosts main-playbook.yml
 
-When Ansible Playbook Run successful completely, You Can Take Control haproxystats-pull and haproxystats-process By systemd::
+When Ansible Playbook run successful completely, you can take control haproxystats-pull and haproxystats-process by systemd::
 
    systemctl start haproxystats-pull.service
 
