@@ -864,7 +864,7 @@ Then enter your haproxy server IP address in hosts file::
 
    vi hosts
 
-After that set information of your environment in varible file::
+After that set information of your environment in variable file::
 
    vi group_vars/all
 
