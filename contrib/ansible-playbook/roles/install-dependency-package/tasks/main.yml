@@ -1,11 +1,37 @@
 ---
-- name : install or update epel repo
-  yum: name=epel-release state=latest
+- name: Check out distribution and Install python version 2 on Ubuntu hosts
+  raw: DISTRO=$(awk '/^ID=/' /etc/*-release | awk -F'=' '{ print tolower($2) }') && if [ "$DISTRO" == "ubuntu" ] ; then apt-get -y update && apt-get install -y python-minimal; fi
 
-- name : install python 3.4 and pip 3 packages
+- name: enable gather_facts
+  setup:
+
+#task on CentOS or RHEL distribution
+- name: Install or update EPEL repo
+  yum: name=epel-release state=latest
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: Install python 3.4 and pip3 packages
   yum:
-    pkg: "{{ item }}"
+    name: "{{ packages }}"
     state: latest
-  with_items:
+  vars:
+    packages:
     - python34
     - python34-pip
+    - gcc
+    - gcc-c++
+    - python34-devel
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+#task on Debian or Ubuntu distribution
+- name: Install python 3 and pip3 packages
+  apt:
+    name: "{{ packages }}"
+    state: latest
+  vars:
+    packages:
+    - python3
+    - python3-pip
+    - python3-setuptools
+    - python-setuptools
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
