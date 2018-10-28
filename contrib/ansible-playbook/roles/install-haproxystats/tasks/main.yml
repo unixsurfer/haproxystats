@@ -1,5 +1,27 @@
 ---
-- name : install haproxystats with pip 3
+- name: Update setuptools by pip3
   pip:
-    name: haproxystats
+    name:
+      - setuptools
+    state: latest
     executable: pip3
+
+
+- name: Install haproxystats by pip3
+  pip:
+    name:
+      - pbr
+      - pandas
+      - haproxystats
+    state: latest
+    executable: pip3
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+
+- name: Install haproxystats by pip3
+  pip:
+    name:
+      - haproxystats
+    state: latest
+    executable: pip3
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'

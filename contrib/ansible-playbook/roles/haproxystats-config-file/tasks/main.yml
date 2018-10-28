@@ -1,7 +1,6 @@
 ---
-- name: make haproxystats config file
+- name: Make haproxystats config file
   template:
     src: haproxystats.conf.j2
     dest: /etc/haproxystats.conf
     backup: yes
-    
