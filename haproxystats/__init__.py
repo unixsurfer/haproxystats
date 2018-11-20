@@ -5,7 +5,7 @@
 __title__ = 'haproxystats'
 __author__ = 'Pavlos Parissis'
 __license__ = 'Apache 2.0'
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 __copyright__ = 'Copyright 2016 Pavlos Parissis <pavlos.parissis@gmail.com'
 
 DEFAULT_OPTIONS = {
