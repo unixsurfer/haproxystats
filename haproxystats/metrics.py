@@ -96,7 +96,7 @@ BACKEND_METRICS = [
     'lbtot',
     'qcur',
     'qmax',
-    'req_tot'
+    'req_tot',
     'srv_abrt',
     'wredis',
     'wretr',
