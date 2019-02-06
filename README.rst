@@ -516,6 +516,66 @@ haproxystats-process uses a queue to store metrics which failed to be sent due
 to a connection error/timeout. This is a First In First Out queueing system.
 When the queue reaches the limit, the oldest items are removed to free space.
 
+* **group-namespace** Unset by default.
+
+group graphite metrics by patterns. When a frontend, backend or server matches a
+given pattern, the metric will be prefixed by this namespace, plus a
+configurable group name which must be specified in the **frontend-groups**,
+**backend-groups** or **server-groups** sections. These sections consist of
+group names and their corresponding regular expression that will be matched
+against frontend, backend or server names (depending on the section).
+
+For example:
+
+Let's assume our metrics look something like:
+
+    loadbalancers.lb-01.haproxy.frontend.foo-001.<metric>
+    loadbalancers.lb-01.haproxy.frontend.foo-002.<metric>
+    ...
+    loadbalancers.lb-01.haproxy.frontend.bar-001.<metric>
+    loadbalancers.lb-01.haproxy.frontend.bar-002.<metric>
+    ...
+
+And we want them to be grouped to like this:
+
+    loadbalancers.lb-01.haproxy.flavor.abc.frontend.foo-001.<metric>
+    loadbalancers.lb-01.haproxy.flavor.abc.frontend.foo-002.<metric>
+    ...
+    loadbalancers.lb-01.haproxy.flavor.xyz.frontend.bar-001.<metric>
+    loadbalancers.lb-01.haproxy.flavor.xyz.frontend.bar-002.<metric>
+    ...
+
+The configuration should contain these settings:
+
+    [graphite]
+    group-namespace = flavor
+
+    [frontend-groups]
+    abc = ^foo-
+    xyz = ^bar-
+
+Note that if the **group-namespace** setting is specified, then at least one of
+**frontend-groups**, **backend-groups** or **server-groups** sections must be
+specified as well.
+
+Also note that if frontend, backend or server names contain dots, these will be
+converted to underscores for graphite -- because dots are graphite's namespace
+separator. The patterns will have to take this into account.
+
+* **group-namespace-double-writes** Unset by default.
+
+Boolean; required only if **group-namespace** is specified. If True, send to
+graphite the original metric as well as the grouped metrics. If False, send
+only the grouped metrics. (See **group-namespace**.)
+
+frontend-groups, backend-groups, and server-groups sections
+###########################################################
+
+Specify the patterns to match against frontend, backend and/or server names, to
+group graphite metrics and give them a variable prefix. See **group-namespace**.
+
+These sections are optional, unless **group-namespace** is set.
+
 local-store section
 ###################
 
@@ -639,7 +699,7 @@ Usage::
     Pulls statistics from HAProxy daemon over UNIX socket(s)
 
     Usage:
-        haproxystats-pull [-f <file> ] [-p | -P]
+        haproxystats-pull [-f <file>] [-p | -P]
 
     Options:
         -f, --file <file>  configuration file with settings
@@ -654,11 +714,12 @@ Usage::
     Processes statistics from HAProxy and pushes them to Graphite
 
     Usage:
-        haproxystats-process [-f <file> ] [-p | -P]
+        haproxystats-process [-f <file>] [-d <dir>] [-p | -P]
 
     Options:
         -f, --file <file>  configuration file with settings
                            [default: /etc/haproxystats.conf]
+        -d, --dir <dir>    directory with additional configuration files
         -p, --print        show default settings
         -P, --print-conf   show configuration
         -h, --help         show this screen
