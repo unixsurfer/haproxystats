@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.5.0
+-----
+
+* RELEASE 0.5.0 version
+* Support grouping metrics by frontend, backend and server names
+
 0.4.2
 -----
 
@@ -31,7 +37,7 @@ CHANGES
 * Update reference of UNIX sockets to include TCP
 * PEP257 compatible docstring
 * Simplify the return logic of two functions
-* Add configuration\_check\_for\_servers()
+* Add configuration_check_for_servers()
 * PEP257 compatible docstrings
 * Disable pylint warning for too-many-branches
 * Change the log severity to info for task report
@@ -44,10 +50,10 @@ CHANGES
 ------
 
 * RELEASE 0.3.15 version
-* Add dcon and dses in the list of FRONTEND\_METRICS
-* Add ctime in the list of SERVER\_AVG\_METRICS
+* Add dcon and dses in the list of FRONTEND_METRICS
+* Add ctime in the list of SERVER_AVG_METRICS
 * Add chkdown in the list of server metrics
-* Add \`slim\` to server metrics, in addition to frontends and backends
+* Add `slim` to server metrics, in addition to frontends and backends
 * Mention in README about ansible and move code under contrib
 * fix update readme file
 * - Add Ansible Playbook For Fast Deploy haproxystats On CentOS 7.x - Update README File
@@ -60,13 +66,13 @@ CHANGES
 ------
 
 * RELEASE 0.3.14 version
-* Fix wrong calculation for Uptime\_sec
+* Fix wrong calculation for Uptime_sec
 
 0.3.13
 ------
 
 * RELEASE 0.3.13 version
-* Convert Idle\_pct to CpuUsagePct
+* Convert Idle_pct to CpuUsagePct
 
 0.3.12
 ------
@@ -81,7 +87,7 @@ CHANGES
 ------
 
 * RELEASE 0.3.11 version
-* Compute standard deviation and percentiles for Idle\_pct
+* Compute standard deviation and percentiles for Idle_pct
 * Sanitize values in pxname and svname columns
 * Simplify the way we exclude frontends/backends
 * Add TotalServer metrics for backend, close #4
@@ -97,7 +103,7 @@ CHANGES
 -----
 
 * RELEASE 0.3.9 version
-* Avoid replacing '.' with '\_' in namespace setting
+* Avoid replacing '.' with '_' in namespace setting
 * Avoid crashing when daemon statistics are inconsistent
 * Do a comparison to None singleton with is not
 * Rename variable epoch to timestamp
@@ -172,7 +178,7 @@ CHANGES
 -----
 
 * RELEASE 0.3.3 version
-* Add a tcp\_server which simulates graphite-relay
+* Add a tcp_server which simulates graphite-relay
 * Add support for per process statistics
 * Make it more clear that we perform aggregation
 
@@ -180,7 +186,7 @@ CHANGES
 -----
 
 * RELEASE 0.3.2 version
-* Make sure we can \_\_init\_\_ method of parent class
+* Make sure we can __init__ method of parent class
 * Remove unnecessary fallback
 * Catch the case where config is in invalid format
 * Perform a sanity check on configuration
@@ -208,7 +214,7 @@ CHANGES
 * Revert "Replace in README UTF-8 characters with plain text"
 * Refactor the loglevel part
 * Disable pylint checks for few cases
-* Make load\_file\_content to skip commented out lines
+* Make load_file_content to skip commented out lines
 * Catch the case when incoming directory disappears
 * Disable few pylint checks
 * Remove unnecessary fallback
@@ -248,9 +254,9 @@ CHANGES
 * RELEASE 0.1.15 version
 * Handle TCP socket failures in a better way
 * Remove unused variable
-* Rename decorator, retries --> retry\_on\_failures
+* Rename decorator, retries --> retry_on_failures
 * Add docstrings in functions
-* Remove log\_hook as it is not needed anymore
+* Remove log_hook as it is not needed anymore
 * Rearrange comments
 * Replace a for loop with a list comprehension
 * Remove unnecessary dependencies from Unit files
@@ -368,7 +374,7 @@ CHANGES
 
 * RELEASE 0.1.2
 * Introduce pull-timeout
-* Keep isolate shutdown and write\_file functions
+* Keep isolate shutdown and write_file functions
 * Catch timeout during the connection
 
 0.1.1
