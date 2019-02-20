@@ -527,7 +527,7 @@ against frontend, backend or server names (depending on the section).
 
 For example:
 
-Let's assume our metrics look something like:
+Let's assume our metrics look something like::
 
     loadbalancers.lb-01.haproxy.frontend.foo-001.<metric>
     loadbalancers.lb-01.haproxy.frontend.foo-002.<metric>
@@ -536,7 +536,7 @@ Let's assume our metrics look something like:
     loadbalancers.lb-01.haproxy.frontend.bar-002.<metric>
     ...
 
-And we want them to be grouped to like this:
+And we want them to be grouped to like this::
 
     loadbalancers.lb-01.haproxy.flavor.abc.frontend.foo-001.<metric>
     loadbalancers.lb-01.haproxy.flavor.abc.frontend.foo-002.<metric>
@@ -545,7 +545,7 @@ And we want them to be grouped to like this:
     loadbalancers.lb-01.haproxy.flavor.xyz.frontend.bar-002.<metric>
     ...
 
-The configuration should contain these settings:
+The configuration should contain these settings::
 
     [graphite]
     group-namespace = flavor
