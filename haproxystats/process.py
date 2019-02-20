@@ -4,11 +4,12 @@
 """Processes statistics from HAProxy and pushes them to Graphite.
 
 Usage:
-    haproxystats-process [-f <file> ] [-p | -P]
+    haproxystats-process [-f <file>] [-d <dir>] [-p | -P]
 
 Options:
     -f, --file <file>  configuration file with settings
                        [default: /etc/haproxystats.conf]
+    -d, --dir <dir>    directory with additional configuration files
     -p, --print        show default settings
     -P, --print-conf   show configuration
     -h, --help         show this screen
@@ -20,6 +21,7 @@ import signal
 import logging
 import glob
 import copy
+import re
 import sys
 import time
 import shutil
@@ -27,6 +29,7 @@ import socket
 import fileinput
 from collections import defaultdict
 from configparser import ConfigParser, ExtendedInterpolation, ParsingError
+from threading import Lock
 from docopt import docopt
 import pyinotify
 import pandas
@@ -61,6 +64,21 @@ STOP_SIGNAL = 'STOP'
 class Consumer(multiprocessing.Process):
     """Process statistics and dispatch them to handlers."""
 
+    # Cache results of the get_metric_paths() function call
+    path_cache = {
+        'frontend': {},
+        'backend': {},
+        'server': {}
+    }
+
+    # Store compiled patterns declared in the 'frontend-groups' and
+    # 'backend-groups' config sections
+    metric_patterns = {
+        'frontend': [],
+        'backend': [],
+        'server': [],
+    }
+
     def __init__(self, tasks, config):
         """Initialization.
 
@@ -85,6 +103,16 @@ class Consumer(multiprocessing.Process):
                 graphite_tree.append(socket.gethostname().split('.')[0])
         graphite_tree.append('haproxy')
         self.graphite_path = '.'.join(graphite_tree)
+
+        # Compile regex patterns for metric groups
+        if self.config.has_option('graphite', 'group-namespace'):
+            self.build_metric_patterns()
+            self.double_writes =\
+                self.config.getboolean('graphite',
+                                       'group-namespace-double-writes')
+        else:
+            self.double_writes = False
+
 
     def run(self):
         """Consume item from queue and process it.
@@ -461,14 +489,18 @@ class Consumer(multiprocessing.Process):
         frontend_aggr_stats = frontend_stats.groupby(['pxname_']).sum()
         cnt_metrics += frontend_aggr_stats.size
         for index, row in frontend_aggr_stats.iterrows():
+            paths = self.get_metric_paths('frontend', index)
             for i in row.iteritems():
-                data = ("{p}.frontend.{f}.{m} {v} {t}\n"
-                        .format(p=self.graphite_path,
-                                f=index,
-                                m=i[0],
-                                v=i[1],
-                                t=self.timestamp))
-                dispatcher.signal('send', data=data)
+                datapoints = [
+                    "{p}.frontend.{f}.{m} {v} {t}\n"
+                    .format(p=path,
+                            f=index,
+                            m=i[0],
+                            v=i[1],
+                            t=self.timestamp) for path in paths
+                ]
+                for datapoint in datapoints:
+                    dispatcher.signal('send', data=datapoint)
 
         data = ("{p}.haproxystats.MetricsFrontend {v} {t}\n"
                 .format(p=self.graphite_path,
@@ -514,14 +546,18 @@ class Consumer(multiprocessing.Process):
 
         for _, row in merged_stats.iterrows():
             backend = row[0]
+            paths = self.get_metric_paths('backend', backend)
             for i in row[1:].iteritems():
-                data = ("{p}.backend.{b}.{m} {v} {t}\n"
-                        .format(p=self.graphite_path,
-                                b=backend,
-                                m=i[0],
-                                v=i[1],
-                                t=self.timestamp))
-                dispatcher.signal('send', data=data)
+                datapoints = [
+                    "{p}.backend.{b}.{m} {v} {t}\n"
+                    .format(p=path,
+                            b=backend,
+                            m=i[0],
+                            v=i[1],
+                            t=self.timestamp) for path in paths
+                ]
+                for datapoint in datapoints:
+                    dispatcher.signal('send', data=datapoint)
 
         data = ("{p}.haproxystats.MetricsBackend {v} {t}\n"
                 .format(p=self.graphite_path,
@@ -580,26 +616,34 @@ class Consumer(multiprocessing.Process):
         cnt_metrics += rows * (columns - 2)
         for backend, row in tot_servers.iterrows():
             cnt_metrics += 1
-            data = ("{p}.backend.{b}.{m} {v} {t}\n"
-                    .format(p=self.graphite_path,
-                            b=backend,
-                            m='TotalServers',
-                            v=row[0],
-                            t=self.timestamp))
-            dispatcher.signal('send', data=data)
+            paths = self.get_metric_paths('backend', backend)
+            datapoints = [
+                "{p}.backend.{b}.{m} {v} {t}\n"
+                .format(p=path,
+                        b=backend,
+                        m='TotalServers',
+                        v=row[0],
+                        t=self.timestamp) for path in paths
+            ]
+            for datapoint in datapoints:
+                dispatcher.signal('send', data=datapoint)
 
         for _, row in merged_stats.iterrows():
             backend = row[0]
             server = row[1]
+            paths = self.get_metric_paths('backend', backend)
             for i in row[2:].iteritems():
-                data = ("{p}.backend.{b}.server.{s}.{m} {v} {t}\n"
-                        .format(p=self.graphite_path,
-                                b=backend,
-                                s=server,
-                                m=i[0],
-                                v=i[1],
-                                t=self.timestamp))
-                dispatcher.signal('send', data=data)
+                datapoints = [
+                    "{p}.backend.{b}.server.{s}.{m} {v} {t}\n"
+                    .format(p=path,
+                            b=backend,
+                            s=server,
+                            m=i[0],
+                            v=i[1],
+                            t=self.timestamp) for path in paths
+                ]
+                for datapoint in datapoints:
+                    dispatcher.signal('send', data=datapoint)
 
         if self.config.getboolean('process', 'aggr-server-metrics'):
             log.info('aggregate stats for servers across all backends')
@@ -620,14 +664,18 @@ class Consumer(multiprocessing.Process):
 
             for _, row in merged_stats.iterrows():
                 server = row[0]
+                paths = self.get_metric_paths('server', server)
                 for i in row[1:].iteritems():
-                    data = ("{p}.server.{s}.{m} {v} {t}\n"
-                            .format(p=self.graphite_path,
-                                    s=server,
-                                    m=i[0],
-                                    v=i[1],
-                                    t=self.timestamp))
-                    dispatcher.signal('send', data=data)
+                    datapoints = [
+                        "{p}.server.{s}.{m} {v} {t}\n"
+                        .format(p=path,
+                                s=server,
+                                m=i[0],
+                                v=i[1],
+                                t=self.timestamp) for path in paths
+                    ]
+                    for datapoint in datapoints:
+                        dispatcher.signal('send', data=datapoint)
 
         data = ("{p}.haproxystats.MetricsServer {v} {t}\n"
                 .format(p=self.graphite_path,
@@ -637,6 +685,82 @@ class Consumer(multiprocessing.Process):
 
         log.info('number of server metrics %s', cnt_metrics)
         log.debug('finished processing statistics for servers')
+
+
+    def build_metric_patterns(self):
+        """Compile regexes from frontend- backend- and server-groups config.
+
+        Builds a list of pairs (pattern_name, regex) to be used when sending
+        metrics. When a frontend, backend or server matches a given pattern, the
+        string in pattern_name can be inserted into the metric.
+
+        This list is stored in the class variable 'metric_patterns'.
+        """
+        # Don't let Consumer instances run this at the same time
+        lock = Lock()
+        with lock:
+            for (section, patterns) in Consumer.metric_patterns.items():
+                # Run only once
+                if patterns:
+                    return
+                config_section = "{}-groups".format(section)
+                if config_section not in self.config.sections():
+                    continue
+                for (name, pattern) in self.config.items(config_section):
+                    # Skip items inherited from the [DEFAULTS] section
+                    if name in self.config.defaults():
+                        continue
+                    try:
+                        regex = re.compile(pattern)
+                    except re.error as error:
+                        log.error('faied to compile %s pattern %s. Error: %s',
+                                  config_section, name, error)
+                    else:
+                        Consumer.metric_patterns[section].append((name, regex))
+            log.debug('built metric patterns %s', Consumer.metric_patterns)
+
+
+    def get_metric_paths(self, section, section_name):
+        """Return the graphite path(s) of a metric.
+
+        When the name of a frontend or backend matches a given pattern, the
+        returned graphite path will include the name of the pattern, prefixed by
+        a string defined in the 'group-namespace' config setting. The list of
+        patterns and their names are defined in the 'frontend-groups',
+        'backend-groups' and 'server-groups' config sections.
+
+        Additionally, if the config option 'group-namespace-double-writes' is
+        true, this function will return the default graphite path as well,
+        so every datapoint may be sent to graphite on both paths.
+
+        If no groups are defined, or if there is no match for the given
+        frontend/backend name, it returns only the default graphite path.
+
+        If two or more patterns match a frontend/backend name, only one will be
+        used: the first one declared in the config file.
+
+        Arguments:
+            section (str): Either 'frontend', 'backend' or 'server'.
+            section_name (str): The name of said frontend/backend/server.
+        """
+        group = None
+        for (pattern_name, pattern) in Consumer.metric_patterns[section]:
+            if pattern.search(section_name):
+                group = pattern_name
+                break
+        if group is None:
+            return [self.graphite_path]
+        try:
+            path = Consumer.path_cache[section][section_name]
+        except KeyError:
+            # cache miss
+            group_namespace = self.config.get('graphite', 'group-namespace')
+            path = "{}.{}.{}".format(self.graphite_path, group_namespace, group)
+            Consumer.path_cache[section][section_name] = path
+        if self.double_writes:
+            return [path, self.graphite_path]
+        else:
+            return [path]
 
 
 def main():
@@ -650,6 +774,18 @@ def main():
         config.read(args['--file'])
     except ParsingError as exc:
         sys.exit(str(exc))
+
+    config_dir = args['--dir']
+    if config_dir is not None:
+        if not os.path.isdir(config_dir):
+            raise ValueError("{d} directory with .conf files doesn't exist"
+                             .format(d=config_dir))
+        else:
+            config_files = glob.glob(os.path.join(config_dir, '*.conf'))
+            try:
+                config.read(config_files)
+            except ParsingError as exc:
+                sys.exit(str(exc))
 
     incoming_dir = config.get('process', 'src-dir')
 
