@@ -457,6 +457,11 @@ HAProxy process. This adds the following metric names::
 Those metrics can be used for alerting when the current usage on connections
 is very close the configured limit.
 
+* **liveness-check-interval** Defaults to **10** (seconds)
+
+How often to check if all workers are alive and trigger a termination if at
+least one is dead.
+
 graphite section
 ################
 
@@ -675,12 +680,6 @@ A wrapper around systemctl tool to a check if haproxystats-pull is running.
 Checks the size of the *incoming* directory queue which is consumed by
 haproxystats-process and alert when exceeds a threshold.
 
-Monit check
------------
-
-If a child process of haproxystats-process dies then monit can restart
-haproxystats-process. There is a monit check configuration available under
-contrib/monit directory which does that.
 
 Starting the programs
 ---------------------

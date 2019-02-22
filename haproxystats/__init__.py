@@ -36,6 +36,7 @@ DEFAULT_OPTIONS = {
         'aggr-server-metrics': 'false',
         'per-process-metrics': 'false',
         'calculate-percentages': 'false',
+        'liveness-check-interval': 10,
     },
     'graphite': {
         'server': '127.0.0.1',

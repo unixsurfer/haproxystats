@@ -13,7 +13,7 @@ Group=haproxystats
 ExecStart=/opt/blue-python/3.4/bin/haproxystats-process -f $CONFIG
 TimeoutStartSec=3
 TimeoutStopSec=60
-Restart=on-failure
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

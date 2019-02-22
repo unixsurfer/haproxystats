@@ -29,7 +29,7 @@ import socket
 import fileinput
 from collections import defaultdict
 from configparser import ConfigParser, ExtendedInterpolation, ParsingError
-from threading import Lock
+from threading import Lock, Thread
 from docopt import docopt
 import pyinotify
 import pandas
@@ -60,6 +60,37 @@ MASK = pyinotify.IN_CREATE | pyinotify.IN_MOVED_TO  # pylint: disable=no-member
 
 STOP_SIGNAL = 'STOP'
 
+
+class Checker(Thread):
+    """Check the liveness of consumer"""
+    def __init__(self, consumers, interval):
+        """Initialization.
+
+        Arguments:
+            consumers (list): A list of consumers(multiprocessing.Process obj)
+            interval (float): How often to run the check
+        """
+        super(Checker, self).__init__()
+        self.daemon = True
+        self.consumers = consumers
+        self.interval = interval
+
+    def run(self):
+        """Terminate main program if at least one consumer isn't alive"""
+        while True:
+            alive_consumers = 0
+            for consumer in self.consumers:
+                if not consumer.is_alive():
+                    log.critical("consumer %s is dead", consumer.name)
+                else:
+                    alive_consumers += 1
+                    log.debug("consumer %s is alive", consumer.name)
+            if alive_consumers < len(self.consumers):
+                log.critical("terminating myself as %s consumers are dead",
+                             len(self.consumers) - alive_consumers)
+                os.kill(os.getpid(), signal.SIGTERM)
+
+            time.sleep(self.interval)
 
 class Consumer(multiprocessing.Process):
     """Process statistics and dispatch them to handlers."""
@@ -876,6 +907,10 @@ def main():
     for consumer in consumers:
         consumer.start()
 
+    _thread = Checker(
+        consumers, config.getfloat('process', 'liveness-check-interval')
+    )
+    _thread.start()
     log.info('watching %s directory for incoming data', incoming_dir)
     notifier.loop(daemonize=False)
 

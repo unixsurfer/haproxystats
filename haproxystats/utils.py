@@ -51,6 +51,7 @@ OPTIONS_TYPE = {
         'aggr-server-metrics': 'getboolean',
         'per-process-metrics': 'getboolean',
         'calculate-percentages': 'getboolean',
+        'liveness-check-interval': 'getfloat',
     },
     'graphite': {
         'server': 'get',
