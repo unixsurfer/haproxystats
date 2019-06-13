@@ -20,7 +20,10 @@ from urllib.parse import urlparse
 import pyinotify
 import pandas
 
-from haproxystats.metrics import MetricNamesPercentage
+from haproxystats.metrics import (MetricNamesPercentage, FRONTEND_METRICS,
+                                  BACKEND_METRICS, BACKEND_AVG_METRICS,
+                                  SERVER_METRICS, SERVER_AVG_METRICS)
+
 
 log = logging.getLogger('root')  # pylint: disable=I0011,C0103
 
@@ -657,15 +660,17 @@ def check_metrics(config):
         None if all checks are successful.
 
     """
-    for metric_type in ['server', 'frontend', 'backend']:
-        option = '{t}-metrics'.format(t=metric_type)
+    valid_metrics_per_option = {
+        'frontend-metrics': FRONTEND_METRICS,
+        'backend-metrics': BACKEND_METRICS + BACKEND_AVG_METRICS,
+        'server-metrics': SERVER_METRICS + SERVER_AVG_METRICS,
+    }
+    for option, valid_metrics in valid_metrics_per_option.items():
         user_metrics = config.get('process', option, fallback=None)
         if user_metrics is not None:
             metrics = set(user_metrics.split(' '))
             if not metrics:
                 break
-            valid_metrics =\
-                globals().get('{}_METRICS'.format(metric_type.upper()))
             if not set(valid_metrics).issuperset(metrics):
                 raise ValueError("invalid configuration, section:'{s}' "
                                  "option:'{p}' error:'{e}'"
