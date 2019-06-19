@@ -5,7 +5,7 @@
 __title__ = 'haproxystats'
 __author__ = 'Pavlos Parissis'
 __license__ = 'Apache 2.0'
-__version__ = '0.4.2'
+__version__ = '0.5.0'
 __copyright__ = 'Copyright 2016 Pavlos Parissis <pavlos.parissis@gmail.com'
 
 DEFAULT_OPTIONS = {
@@ -36,6 +36,7 @@ DEFAULT_OPTIONS = {
         'aggr-server-metrics': 'false',
         'per-process-metrics': 'false',
         'calculate-percentages': 'false',
+        'liveness-check-interval': 10,
     },
     'graphite': {
         'server': '127.0.0.1',
