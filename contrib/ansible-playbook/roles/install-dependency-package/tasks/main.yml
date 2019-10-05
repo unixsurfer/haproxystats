@@ -1,5 +1,5 @@
 ---
-- name: Check out distribution and Install python version 2 on Ubuntu hosts
+- name: Check out distribution and install python version 2 on Ubuntu hosts
   raw: DISTRO=$(awk '/^ID=/' /etc/*-release | awk -F'=' '{ print tolower($2) }') && if [ "$DISTRO" == "ubuntu" ] ; then apt-get -y update && apt-get install -y python-minimal; fi
 
 - name: enable gather_facts
@@ -10,17 +10,16 @@
   yum: name=epel-release state=latest
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
-- name: Install python 3.4 and pip3 packages
+- name: Install python 3 and pip3 packages
   yum:
     name: "{{ packages }}"
     state: latest
   vars:
     packages:
-    - python34
-    - python34-pip
+    - python3-pip
     - gcc
     - gcc-c++
-    - python34-devel
+    - python3-devel
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
 #task on Debian or Ubuntu distribution
