@@ -9,7 +9,7 @@ Type=simple
 Environment="CONFIG=/etc/haproxystats.conf"
 User=haproxystats
 Group=haproxystats
-ExecStart=/usr/bin/haproxystats-pull -f $CONFIG
+ExecStart=/usr/local/bin/haproxystats-pull -f $CONFIG
 TimeoutStartSec=3
 TimeoutStopSec=6
 Restart=on-failure
