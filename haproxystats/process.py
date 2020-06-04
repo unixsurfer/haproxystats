@@ -554,6 +554,8 @@ class Consumer(multiprocessing.Process):
         log.debug('processing statistics for backends')
         # Filtering for Pandas
         is_backend = data_frame['svname_'] == 'BACKEND'
+        # For averages only consider entries with actual connections made
+        got_traffic = data_frame['lbtot'] > 0
 
         metrics = self.config.get('process', 'backend-metrics', fallback=None)
         if metrics is not None:
@@ -565,7 +567,7 @@ class Consumer(multiprocessing.Process):
         # for others the average, thus we split them.
         stats_sum = (data_frame[is_backend & filter_backend]
                      .loc[:, ['pxname_'] + metrics])
-        stats_avg = (data_frame[is_backend & filter_backend]
+        stats_avg = (data_frame[is_backend & filter_backend & got_traffic]
                      .loc[:, ['pxname_'] + BACKEND_AVG_METRICS])
 
         aggr_sum = stats_sum.groupby(['pxname_'], as_index=False).sum()
@@ -610,6 +612,8 @@ class Consumer(multiprocessing.Process):
         cnt_metrics = 1
         # A filter for rows with stats for servers
         is_server = data_frame['type'] == 2
+        # For averages only consider entries with actual connections made
+        got_traffic = data_frame['lbtot'] > 0
 
         log.debug('processing statistics for servers')
 
@@ -625,7 +629,7 @@ class Consumer(multiprocessing.Process):
         # for others the average, thus we split them.
         stats_sum = (data_frame[is_server & filter_backend]
                      .loc[:, ['pxname_', 'svname_'] + server_metrics])
-        stats_avg = (data_frame[is_server & filter_backend]
+        stats_avg = (data_frame[is_server & filter_backend & got_traffic]
                      .loc[:, ['pxname_', 'svname_'] + SERVER_AVG_METRICS])
         servers = (data_frame[is_server & filter_backend]
                    .loc[:, ['pxname_', 'svname_']])
