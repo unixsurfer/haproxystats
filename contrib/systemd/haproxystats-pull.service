@@ -1,7 +1,7 @@
 [Unit]
 Description=Pulls statistics from HAProxy daemon over UNIX sockets
-After=network.service syslog.target
-Wants=network.service syslog.target
+After=network.target syslog.target
+Wants=network.target syslog.target
 Documentation=https://github.com/unixsurfer/haproxystats
 
 [Service]
