@@ -22,7 +22,9 @@ import pandas
 
 from haproxystats.metrics import (MetricNamesPercentage, FRONTEND_METRICS,
                                   BACKEND_METRICS, BACKEND_AVG_METRICS,
-                                  SERVER_METRICS, SERVER_AVG_METRICS)
+                                  BACKEND_AVG_TIME_METRICS,
+                                  SERVER_METRICS, SERVER_AVG_METRICS,
+                                  SERVER_AVG_TIME_METRICS)
 
 
 log = logging.getLogger('root')  # pylint: disable=I0011,C0103
@@ -662,8 +664,8 @@ def check_metrics(config):
     """
     valid_metrics_per_option = {
         'frontend-metrics': FRONTEND_METRICS,
-        'backend-metrics': BACKEND_METRICS + BACKEND_AVG_METRICS,
-        'server-metrics': SERVER_METRICS + SERVER_AVG_METRICS,
+        'backend-metrics': BACKEND_METRICS + BACKEND_AVG_METRICS + BACKEND_AVG_TIME_METRICS,
+        'server-metrics': SERVER_METRICS + SERVER_AVG_METRICS + SERVER_AVG_TIME_METRICS,
     }
     for option, valid_metrics in valid_metrics_per_option.items():
         user_metrics = config.get('process', option, fallback=None)
