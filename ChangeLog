@@ -1,6 +1,16 @@
 CHANGES
 =======
 
+0.5.2
+-----
+
+* RELEASE 0.5.2 version
+* Use the network target on the Systemd unit files
+* Calculate average only when actual connections have been made
+* Update binary path in systemd file for haproxystats-process service
+* Update binary path in systemd file for haproxystats-pull service
+* Update python packages for CentOS distribution
+
 0.5.1
 -----
 
@@ -8,6 +18,10 @@ CHANGES
 * Fix runtime error when specifying a custom list of metrics
 * Check liveness of workers and exit if at least one is dead
 * Fix formatting in README for group-namespace option
+
+0.5.0
+-----
+
 * RELEASE 0.5.0 version
 * Support grouping metrics by frontend, backend and server names
 
