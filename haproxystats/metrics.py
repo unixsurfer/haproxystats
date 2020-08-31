@@ -79,7 +79,8 @@ SERVER_METRICS = [
     'wretr'
 ] + COMMON
 
-SERVER_AVG_METRICS = ['ctime', 'qtime', 'rtime', 'throttle', 'ttime', 'weight']
+SERVER_AVG_METRICS = ['throttle', 'weight']
+SERVER_AVG_TIME_METRICS = ['ctime', 'qtime', 'rtime', 'ttime']
 
 BACKEND_METRICS = [
     'chkdown',
@@ -102,15 +103,8 @@ BACKEND_METRICS = [
     'wretr',
 ] + COMMON
 
-BACKEND_AVG_METRICS = [
-    'act',
-    'bck',
-    'rtime',
-    'ctime',
-    'qtime',
-    'ttime',
-    'weight'
-]
+BACKEND_AVG_METRICS = ['act', 'bck', 'weight']
+BACKEND_AVG_TIME_METRICS = ['rtime', 'ctime', 'qtime', 'ttime']
 
 FRONTEND_METRICS = [
     'comp_byp',

@@ -45,8 +45,10 @@ from haproxystats.utils import (dispatcher, GraphiteHandler, get_files,
                                 calculate_percentage_per_column,
                                 calculate_percentage_per_row)
 from haproxystats.metrics import (DAEMON_AVG_METRICS, DAEMON_METRICS,
-                                  SERVER_AVG_METRICS, SERVER_METRICS,
-                                  BACKEND_AVG_METRICS, BACKEND_METRICS,
+                                  SERVER_AVG_METRICS, SERVER_AVG_TIME_METRICS,
+                                  SERVER_METRICS,
+                                  BACKEND_AVG_METRICS, BACKEND_AVG_TIME_METRICS,
+                                  BACKEND_METRICS,
                                   FRONTEND_METRICS)
 
 LOG_FORMAT = ('%(asctime)s [%(process)d] [%(processName)-11s] '
@@ -567,12 +569,17 @@ class Consumer(multiprocessing.Process):
         # for others the average, thus we split them.
         stats_sum = (data_frame[is_backend & filter_backend]
                      .loc[:, ['pxname_'] + metrics])
-        stats_avg = (data_frame[is_backend & filter_backend & got_traffic]
+        stats_avg = (data_frame[is_backend & filter_backend]
                      .loc[:, ['pxname_'] + BACKEND_AVG_METRICS])
+        stats_avg_time = (data_frame[is_backend & filter_backend & got_traffic]
+                          .loc[:, ['pxname_'] + BACKEND_AVG_TIME_METRICS])
 
         aggr_sum = stats_sum.groupby(['pxname_'], as_index=False).sum()
         aggr_avg = stats_avg.groupby(['pxname_'], as_index=False).mean()
-        merged_stats = pandas.merge(aggr_sum, aggr_avg, on='pxname_')
+        aggr_avg_time = stats_avg_time.groupby(['pxname_'], as_index=False) \
+                                      .mean()
+        merged_stats = aggr_sum.merge(aggr_avg, on='pxname_', how='outer') \
+                               .merge(aggr_avg_time, on='pxname_', how='outer')
 
         rows, columns = merged_stats.shape
         cnt_metrics += rows * (columns - 1)  # minus the index
@@ -629,8 +636,10 @@ class Consumer(multiprocessing.Process):
         # for others the average, thus we split them.
         stats_sum = (data_frame[is_server & filter_backend]
                      .loc[:, ['pxname_', 'svname_'] + server_metrics])
-        stats_avg = (data_frame[is_server & filter_backend & got_traffic]
+        stats_avg = (data_frame[is_server & filter_backend]
                      .loc[:, ['pxname_', 'svname_'] + SERVER_AVG_METRICS])
+        stats_avg_time = (data_frame[is_server & filter_backend & got_traffic]
+                          .loc[:, ['pxname_', 'svname_'] + SERVER_AVG_TIME_METRICS])
         servers = (data_frame[is_server & filter_backend]
                    .loc[:, ['pxname_', 'svname_']])
 
@@ -644,9 +653,15 @@ class Consumer(multiprocessing.Process):
         aggr_avg = (stats_avg
                     .groupby(['pxname_', 'svname_'], as_index=False)
                     .mean())
-        merged_stats = pandas.merge(aggr_sum,
-                                    aggr_avg,
-                                    on=['svname_', 'pxname_'])
+        aggr_avg_time = (stats_avg_time
+                         .groupby(['pxname_', 'svname_'], as_index=False)
+                         .mean())
+        merged_stats = aggr_sum.merge(aggr_avg,
+                                      on=['svname_', 'pxname_'],
+                                      how='outer') \
+                               .merge(aggr_avg_time,
+                                      on=['svname_', 'pxname_'],
+                                      how='outer')
         rows, columns = merged_stats.shape
         cnt_metrics += rows * (columns - 2)
         for backend, row in tot_servers.iterrows():
@@ -687,13 +702,23 @@ class Consumer(multiprocessing.Process):
                          .loc[:, ['svname_'] + SERVER_METRICS])
             stats_avg = (data_frame[is_server]
                          .loc[:, ['svname_'] + SERVER_AVG_METRICS])
+            stats_avg_time = (data_frame[is_server & got_traffic]
+                              .loc[:, ['svname_'] + SERVER_AVG_TIME_METRICS])
             aggr_sum = (stats_sum
                         .groupby(['svname_'], as_index=False)
                         .sum())
             aggr_avg = (stats_avg
                         .groupby(['svname_'], as_index=False)
                         .mean())
-            merged_stats = pandas.merge(aggr_sum, aggr_avg, on=['svname_'])
+            aggr_avg_time = (stats_avg_time
+                             .groupby(['svname_'], as_index=False)
+                             .mean())
+            merged_stats = aggr_sum.merge(aggr_avg,
+                                          on=['svname_'],
+                                          how='outer') \
+                                   .merge(aggr_avg_time,
+                                          on=['svname_'],
+                                          how='outer')
             rows, columns = merged_stats.shape
             cnt_metrics += rows * (columns - 1)  # minus the index
 
