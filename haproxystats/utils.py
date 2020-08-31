@@ -146,7 +146,8 @@ def concat_csv(csv_files):
         except (ValueError, OSError) as exc:
             log.error('Pandas failed to parse %s file with: %s', csv_file, exc)
         else:
-            data_frames.append(data_frame)
+            if not data_frame.empty:
+                data_frames.append(data_frame)
     if data_frames:
         return pandas.concat(data_frames)
 
