@@ -938,6 +938,33 @@ When Ansible Playbook run successful completely, you can take control haproxysta
 
    systemctl start haproxystats-process.service
 
+Use Docker::
+
+To build haproxystats docker image, after clone the project you should run the beneath commands, all you need as a prerequisite is having docker on your machine::
+
+   cd haproxystats/contrib/Docker
+   
+   docker build --tag [Your-name]/haproxystats  .
+   
+Launch a container:
+
+To launch a haproxystats docker container you can use this instruction::
+
+   docker run -d --restart always --name [container_name] --hostname=[container_hostname] -v [path_of_haproxystats_config_file]:/etc/haproxystats/haproxystats.conf -v [path_of_haproxy_socket_files]:[path_of_socket-dir]  [Your-name]/haproxystats
+
+Notes:
+
+- [container_name]: The name of the container which you can choose as you wish.
+- [container_hostname]: The hostname of the container which you can choose as you wish.
+- [path_of_haproxystats_config_file]: The path to your haproxystats configuration file.
+- [path_of_haproxy_socket_files]: The path to your haproxy socket files.
+- [path_of_socket-dir]: The path of the haproxy socket files inside of container that you have set in the haproxystats.conf file.
+
+
+For example::
+
+   docker run -d --restart always --name haproxystats --hostname=haproxystats -v /opt/haproxystats/haproxystats.conf:/etc/haproxystats/haproxystats.conf -v /var/lib/haproxy:/run/haproxy  hos7ein/haproxystats
+
 
 How to make a release
 ---------------------
